@@ -45,9 +45,13 @@ lez_monitor <- st_intersection(monitor, lez_buff_500)
 
 
 mapview(lez_buff_500, col.regions = "steelblue") +
+  mapview(lez_monitor)
+
+mapview(lez_buff_500, col.regions = "steelblue") +
   mapview(lez_monitor %>% filter(siteId == "GA5351_T"))
 
 
+library(plotly)
 
 df1 %>% 
   filter(siteId %in% lez_monitor$siteId) %>% 
@@ -62,14 +66,95 @@ ggplotly(gg)
 
 df1 %>% 
   filter(siteId %in% lez_monitor$siteId)  -> df2
+####################################################
+df2 %>% 
+  group_by(lez, dt_month, siteId) %>% 
+  summarise(sumflow = sum(flow)) -> lez_traffic
 
 
+lez_monitor %>% 
+  left_join(lez_traffic, by = "siteId") %>% 
+  select(siteId, dt_month, sumflow) %>% 
+  group_by(siteId) %>% 
+  summarise(sumflow_mean = mean(sumflow)) -> lez_monitor_mean
+
+lez_monitor %>% 
+  left_join(lez_traffic, by = "siteId") %>% 
+  select(siteId, lez, sumflow) %>% 
+  drop_na() %>% 
+  group_by(siteId, lez) %>% 
+  summarise(sumflow = round(mean(sumflow)),0) -> lez_stats
+
+lez_stats$lez <- factor(lez_stats$lez, levels = c("Pre-LEZ", "Post-LEZ"))
+
+
+# lez_monitor %>% 
+#   left_join(lez_traffic, by = "siteId") %>% 
+#   select(siteId, dt_month, sumflow) %>%  
+#   pivot_wider(names_from = "dt_month", values_from = "sumflow") %>%  
+#   rename(March = `3`, April = `4`, May = `5`, June = `6`, July = `7`, August = `8`) %>%
+#   select(siteId, March, April, May, June, July, August) -> lez_monitor_month
+
+lez_stats %>% 
+    pivot_wider(names_from = "lez", values_from = "sumflow") -> lez_monitor_prepostlez
+    
+
+mapview(lez_monitor_mean, zcol = "sumflow_mean", at = seq(0, 120000, 20000), legend = TRUE) +
+mapview(lez_monitor_prepostlez, zcol = "Pre-LEZ", at = seq(0, 120000, 20000), legend = TRUE) +
+  mapview(lez_monitor_prepostlez, zcol = "Post-LEZ", at = seq(0, 120000, 20000), legend = TRUE) 
+
+
+
+ggplot() +
+  geom_sf(data = lez_buff_500, fill="grey", alpha=0.3) +
+  geom_sf(data=lez_stats, aes(color=sumflow, size= sumflow)) +
+  geom_sf_text(data = lez_stats, aes(label = sumflow), size = 3.5, 
+               nudge_x = -30, nudge_y = -40) +
+  viridis::scale_color_viridis() +
+  labs(x = "", y = "") +
+  scale_size(range = c(0, 10)) +
+  theme_bw() + 
+  facet_wrap(~lez) +
+  coord_sf() 
+  
+
+
+
+
+####################################################
 library(rstatix)
 
+## Hour
 df2 %>% 
-  group_by(lez, dt_weekdays) %>% 
-  summarise(weekdayflow = sum(flow)) %>% 
+  group_by(lez, dt_hour) %>% 
+  summarise(sumflow = sum(flow)) %>% 
   ungroup() %>% 
-  anova_test(weekdayflow ~ dt_weekdays + lez)
+  anova_test(sumflow ~ dt_hour + lez)
+
+## Date
+df2 %>% 
+  group_by(lez, dt_date) %>% 
+  summarise(sumflow = sum(flow)) %>% 
+  ungroup() %>% 
+  anova_test(sumflow ~ dt_date + lez)
+
+### Day of Week
+
+df2 %>% 
+  group_by(lez, dt_weekdays, dt_date) %>% 
+  summarise(sumflow = sum(flow)) %>% 
+  ungroup() %>% 
+  anova_test(sumflow ~ dt_weekdays + lez)
+
+
+df2 %>% 
+  mutate(dt_week = isoweek(timeStamp)) %>%
+  group_by(lez, dt_week) %>% 
+  summarise(sumflow = sum(flow)) %>% 
+  ungroup() %>% 
+  anova_test(sumflow ~ dt_week + lez)
+
+
+
   
   
