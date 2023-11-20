@@ -76,16 +76,25 @@ lez_monitor %>%
   left_join(lez_traffic, by = "siteId") %>% 
   select(siteId, dt_month, sumflow) %>% 
   group_by(siteId) %>% 
-  summarise(sumflow_mean = mean(sumflow)) -> lez_monitor_mean
+  summarise(sumflow = sum(sumflow)) -> lez_monitor_total
 
 lez_monitor %>% 
   left_join(lez_traffic, by = "siteId") %>% 
   select(siteId, lez, sumflow) %>% 
   drop_na() %>% 
   group_by(siteId, lez) %>% 
-  summarise(sumflow = round(mean(sumflow)),0) -> lez_stats
+  summarise(sumflow = sum(sumflow)) -> lez_stats
 
 lez_stats$lez <- factor(lez_stats$lez, levels = c("Pre-LEZ", "Post-LEZ"))
+
+
+lez_monitor %>% 
+  left_join(lez_traffic, by = "siteId") %>% 
+  st_drop_geometry() %>% 
+  select(lez, sumflow) %>% 
+  drop_na() %>% 
+  group_by(lez) %>% 
+  summarise(sumflow = sum(sumflow)) -> lez_stats1
 
 
 # lez_monitor %>% 
@@ -99,14 +108,14 @@ lez_stats %>%
     pivot_wider(names_from = "lez", values_from = "sumflow") -> lez_monitor_prepostlez
     
 
-mapview(lez_monitor_mean, zcol = "sumflow_mean", at = seq(0, 120000, 20000), legend = TRUE) +
-mapview(lez_monitor_prepostlez, zcol = "Pre-LEZ", at = seq(0, 120000, 20000), legend = TRUE) +
-  mapview(lez_monitor_prepostlez, zcol = "Post-LEZ", at = seq(0, 120000, 20000), legend = TRUE) 
+mapview(lez_monitor_total, zcol = "sumflow", at = seq(0, 650000, 100000), legend = TRUE) +
+mapview(lez_monitor_prepostlez, zcol = "Pre-LEZ", at = seq(0, 200000, 50000), legend = TRUE) +
+  mapview(lez_monitor_prepostlez, zcol = "Post-LEZ", at = seq(0, 200000, 50000), legend = TRUE) 
 
 
 
 ggplot() +
-  geom_sf(data = lez_buff_500, fill="grey", alpha=0.3) +
+  geom_sf(data = lez_shp %>% st_transform(crs = 27700), fill="grey", alpha=0.3) +
   geom_sf(data=lez_stats, aes(color=sumflow, size= sumflow)) +
   geom_sf_text(data = lez_stats, aes(label = sumflow), size = 3.5, 
                nudge_x = -30, nudge_y = -40) +
@@ -117,7 +126,7 @@ ggplot() +
   facet_wrap(~lez) +
   coord_sf() 
   
-
+ggsave("lez_traffic.jpg", width = 16, height = 8)
 
 
 
@@ -141,10 +150,14 @@ df2 %>%
 ### Day of Week
 
 df2 %>% 
-  group_by(lez, dt_weekdays, dt_date) %>% 
+  mutate(week_group = case_when(dt_weekdays %in% c("Tuesday", "Wednesday", "Thursday") ~ "Core Weekdays",
+                                dt_weekdays %in% c("Monday", "Friday") ~ "Other Weekdays",
+                                dt_weekdays %in% c("Saturday", "Sunday") ~ "Weekends"
+                                )) %>% 
+  group_by(lez, week_group, dt_date) %>% 
   summarise(sumflow = sum(flow)) %>% 
   ungroup() %>% 
-  anova_test(sumflow ~ dt_weekdays + lez)
+  anova_test(sumflow ~ week_group + lez)
 
 
 df2 %>% 
@@ -156,5 +169,21 @@ df2 %>%
 
 
 
-  
-  
+library(ggpubr)
+df2 %>% 
+  mutate(week_group = case_when(dt_weekdays %in% c("Tuesday", "Wednesday", "Thursday") ~ "Core Weekdays",
+                                dt_weekdays %in% c("Monday", "Friday") ~ "Other Weekdays",
+                                dt_weekdays %in% c("Saturday", "Sunday") ~ "Weekends"
+  )) %>% 
+  group_by(lez, week_group, dt_date) %>% 
+  summarise(sumflow = sum(flow)) %>% 
+  ungroup() %>% 
+  select(-dt_date)-> imsi
+
+imsi$lez <- factor(imsi$lez, levels = c("Pre-LEZ", "Post-LEZ"))
+
+ggboxplot(imsi, x = "week_group", y = "sumflow", color = "lez",
+            palette = c("#00AFBB", "#E7B800")) +
+  labs(x = "")
+
+ggsave("anova_weekdays.jpg", height = 3, width = 6)
