@@ -24,6 +24,15 @@ df %>%
          dt_year = year(timestamp),
          lez = ifelse(dt_month < 6, "Pre-LEZ", "Post-LEZ")) -> df1
 
+df1 %>% 
+  drop_na() %>% 
+  group_by(dt_month) %>% 
+  summarise(flow = sum(flow)) %>% 
+  ggplot(aes(dt_month, flow)) +
+  geom_line(size = 2)
+
+options(scipen = 999)
+
 
 df1 %>% 
   filter(description == "Cathcart Rd northbound to Preston St") %>% 
