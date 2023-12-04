@@ -1,6 +1,7 @@
 library(arrow)
 library(data.table)
 library(tidyverse)
+library(openair)
 library(sf)
 library(mapview)
 
@@ -59,6 +60,29 @@ mapview(lez_buff_500, col.regions = "steelblue") +
 mapview(lez_buff_500, col.regions = "steelblue") +
   mapview(lez_monitor %>% filter(siteId == "GA5351_T"))
 
+########################################################################
+
+
+apmonitor <- importMeta(source = "aurn", all = FALSE, year = NA, duplicate = FALSE)
+
+apmonitor %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  st_intersection(lez_shp) %>% 
+  mapview()
+
+
+apmonitor %>% 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>% 
+  filter(code %in% c("GLA4", "GLKP", "GHSR")) -> ap_glasgow
+
+ap_glasgow %>% 
+  st_transform(27700) %>% 
+  st_buffer(200) %>% 
+  mapview(col.regions = "red") +
+  mapview(lez_monitor)
+
+
+########################################################################
 
 library(plotly)
 
