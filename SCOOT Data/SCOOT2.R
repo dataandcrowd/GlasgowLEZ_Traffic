@@ -135,20 +135,11 @@ result1
 # post-hoc test
 df_for_analysis %>% 
   group_by(siteId, week_group) %>% 
-  t_test(total_flow ~ lez) -> posthoc1
-
-posthoc1$p <- posthoc1$p %>% round(3)
-
-posthoc1
-
+  games_howell_test(total_flow ~ lez) #%>% View
 
 df_for_analysis %>% 
   group_by(siteId, lez) %>% 
-  t_test(total_flow ~ week_group) -> posthoc2
-
-posthoc2$p <- posthoc2$p %>% round(3)
-
-print(posthoc2, n = Inf)
+  games_howell_test(total_flow ~ week_group) #%>% View
 
 
 
@@ -182,6 +173,15 @@ no2_daily %>%
 
 
 no2_df$lez <- factor(no2_df$lez, levels = c("Pre-LEZ", "Post-LEZ"))  
+
+no2_df %>% 
+  drop_na() %>% 
+  group_by(code, week_group, lez) %>% 
+  summarise(no2_daily = mean(no2_daily)) %>% 
+  pivot_wider(names_from = lez, values_from = no2_daily)
+
+
+
   
 no2_df %>% 
   drop_na() %>% 
@@ -205,13 +205,12 @@ ggsave("box1.jpg", width = 7, height = 3)
 # post-hoc test
 no2_df %>% 
   group_by(code, week_group) %>% 
-  t_test(no2_daily ~ lez) 
+  games_howell_test(no2_daily ~ lez) %>% View
 
 
 no2_df %>% 
   group_by(code, lez) %>% 
-  t_test(no2_daily ~ week_group) %>% 
-  print(n = Inf)
+  games_howell_test(no2_daily ~ week_group) %>% View
 
 
 
