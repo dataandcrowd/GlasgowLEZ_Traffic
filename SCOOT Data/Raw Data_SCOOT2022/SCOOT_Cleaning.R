@@ -19,15 +19,17 @@ dt <- rbindlist(dt_list, idcol = "file")
 
 dt %>% 
   as_tibble %>% 
-  mutate(ID = substr(file, 1, 7)) -> dt_raw
+  mutate(ID = substr(file, 1, 8)) -> dt_raw
 
 
 #Clean DF
 dt_raw %>% 
   mutate(dt = paste(date, time, sep = " "),
          dt = paste(dt, ":00:00"),
-         dt = ymd_hms(dt)) %>% 
-  select(ID, dt, flow) -> dt_df
+         dt = ymd_hms(dt),
+         timeStamp = dt,
+         siteId = ID) %>% 
+  select(siteId, dt, flow) -> dt_df
 
 dt_df %>% 
   arrow_table %>% 
