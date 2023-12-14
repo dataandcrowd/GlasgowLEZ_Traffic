@@ -77,7 +77,7 @@ cctv_lez %>%
 cctv_lez %>% 
   left_join(cctv, by = "camera_id") %>% 
   st_drop_geometry() %>% 
-  select(week_group, camera_id, dt_date, LEZ, cars, pedestrians, cyclists, buses, taxis, lorries) %>% 
+  select(week_group, camera_id, dt_date, LEZ, cars, vans, pedestrians, cyclists, buses, taxis, lorries) %>% 
   pivot_longer(!c(camera_id, week_group, dt_date, LEZ), names_to = "mode", values_to = "value") %>% 
   group_by(camera_id, LEZ, dt_date, week_group, mode) %>% 
   summarise(value = sum(value)) %>% 
@@ -101,7 +101,7 @@ transport_df %>%
   pivot_wider(names_from = LEZ, values_from = number) 
 
 transport_df %>% 
-  filter(mode %in% c("buses", "lorries")) %>% 
+  filter(mode %in% c("buses", "lorries", "vans")) %>% 
   group_by(camera_id, mode, LEZ) %>% 
   summarise(number = sum(value)) %>% 
   pivot_wider(names_from = LEZ, values_from = number) %>% 
@@ -118,6 +118,19 @@ transport_df %>%
   anova_test(value ~ week_group + LEZ) 
   
 
+transport_df %>% 
+  filter(mode == "vans") %>% 
+  group_by(camera_id, mode) %>% 
+  anova_test(value ~ week_group + LEZ) 
+
+
+transport_df %>% 
+  filter(mode %in% c("vans", "lorries")) %>% 
+  group_by(camera_id) %>% 
+  anova_test(value ~ week_group + LEZ)
+
+
+
 transport_df%>% 
   filter(mode == "buses") %>% 
   ggboxplot(x = "week_group", y = "value", color = "LEZ",
@@ -127,9 +140,17 @@ transport_df%>%
 
 
 transport_df%>% 
-  filter(mode == "lorries") %>% 
+  filter(mode == "vans") %>% 
   ggboxplot(x = "week_group", y = "value", color = "LEZ",
             palette = c("#00AFBB", "#E7B800")) +
   labs(x = "", y = "Count") +
   facet_wrap(~camera_id+mode, scales = "free") 
+
+
+transport_df%>% 
+  filter(mode %in% c("vans", "lorries")) %>% 
+  ggboxplot(x = "week_group", y = "value", color = "LEZ",
+            palette = c("#00AFBB", "#E7B800")) +
+  labs(x = "", y = "Count") +
+  facet_wrap(~camera_id, scales = "free") 
 
