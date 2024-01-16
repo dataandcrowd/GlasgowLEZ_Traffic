@@ -111,14 +111,15 @@ result3$p <- result3$p %>% round(3)
 
 result3
 
-
-ggboxplot(no2_df_23, x = "week_group", y = "no2_daily", color = "lez",
+no2_df_23 |> 
+  filter(code != "GLKP") |> 
+  ggboxplot(x = "week_group", y = "no2_daily", color = "lez",
           palette = c("#00AFBB", "#E7B800")) +
   labs(x = "", y = "Daily Mean NO2") +
   facet_wrap(~code) 
 
 
-ggsave("box1.jpg", width = 7, height = 3)
+ggsave("box1.jpg", width = 5, height = 3)
 
 
 # post-hoc test
@@ -170,14 +171,15 @@ result3$p <- result3$p %>% round(3)
 
 result3
 
-
-ggboxplot(no2_df_22, x = "week_group", y = "no2_daily", color = "lez",
+no2_df_23 |> 
+  filter(code != "GLKP") |> 
+ggboxplot(x = "week_group", y = "no2_daily", color = "lez",
           palette = c("#00AFBB", "#E7B800")) +
   labs(x = "", y = "Daily Mean NO2") +
   facet_wrap(~code) 
 
 
-ggsave("box22_2.jpg", width = 7, height = 3)
+ggsave("box22_2.jpg", width = 5, height = 3)
 
 
 # post-hoc test
