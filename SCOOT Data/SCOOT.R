@@ -108,6 +108,15 @@ df_for_analysis$lez <- factor(df_for_analysis$lez, levels = c("Pre-LEZ", "Post-L
 
 library(rstatix)
 
+df_for_analysis |> 
+  group_by(siteId, week_group, lez) |> 
+  summarise(total_flow = mean(total_flow)) |>  
+  pivot_wider(names_from = lez, values_from = total_flow) |> 
+  mutate(`Diff_Per(%)` = -(1 - (`Post-LEZ` / `Pre-LEZ`)) * 100)
+
+
+
+
 df_for_analysis %>% 
   group_by(siteId) %>% 
   anova_test(total_flow ~ week_group  + lez) -> result1
@@ -187,6 +196,16 @@ df_for_analysis_22$lez <- factor(df_for_analysis_22$lez, levels = c("Pre-June 20
 
 
 library(rstatix)
+
+df_for_analysis_22 |> 
+  group_by(siteId, week_group, lez) |> 
+  summarise(total_flow = mean(total_flow)) |>  
+  pivot_wider(names_from = lez, values_from = total_flow) |> 
+  mutate(`Diff_Per(%)` = -(1 - (`Pre-June 2022` / `Post-June 2022`)) * 100)
+
+
+
+
 
 df_for_analysis_22 %>% 
   group_by(siteId) %>% 

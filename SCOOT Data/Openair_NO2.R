@@ -115,11 +115,16 @@ no2_df_23 |>
   filter(code != "GLKP") |> 
   ggboxplot(x = "week_group", y = "no2_daily", color = "lez",
           palette = c("#00AFBB", "#E7B800")) +
-  labs(x = "", y = "Daily Mean NO2") +
-  facet_wrap(~code) 
+  labs(x = "", y = "Daily Mean NO2 (µg/m3)") +
+  ylim(0,80) +
+  facet_wrap(~code)+
+  theme(legend.title=element_blank(),
+        axis.text.x=element_blank(),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-5,-10,-10,-10))
 
 
-ggsave("box1.jpg", width = 5, height = 3)
+ggsave("box1.jpg", width = 5, height = 2.5)
 
 
 # post-hoc test
@@ -171,15 +176,20 @@ result3$p <- result3$p %>% round(3)
 
 result3
 
-no2_df_23 |> 
+no2_df_22 |> 
   filter(code != "GLKP") |> 
 ggboxplot(x = "week_group", y = "no2_daily", color = "lez",
           palette = c("#00AFBB", "#E7B800")) +
-  labs(x = "", y = "Daily Mean NO2") +
-  facet_wrap(~code) 
+  labs(x = "", y = "Daily Mean NO2(µg/m3)") +
+  ylim(0,80) +
+  facet_wrap(~code) +
+  theme(legend.title=element_blank(),
+        axis.text.x=element_blank(),
+        legend.margin=margin(0,0,0,0),
+        legend.box.margin=margin(-5,-10,-10,-10))
 
 
-ggsave("box22_2.jpg", width = 5, height = 3)
+ggsave("box22_2.jpg", width = 5, height = 2.5)
 
 
 # post-hoc test
