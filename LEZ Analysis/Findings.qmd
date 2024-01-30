@@ -1,17 +1,431 @@
 ---
 title: "Findings Code"
 author: "Hyesop Shin"
+toc: true
+toc-depth: 2
+execute:
+  echo: true
+  message: false
+  warning: false
 format: html
 ---
 
 ## Intro
 
-This is a code
+This documentation is to demonstrate the procedure of our analysis for Glasgow Low Emission Zone (LEZ). To begin with, we call files that are in `.parquet` `.RData`. We then explore the traffic and NO~2~ data to understand the distribution in two different areas, namely Hope St (city centre) and High St (Edge of LEZ).
+
+Here we use a number of libraries.
+
+```{r}
+options(scipen = 999)
+
+library(arrow)
+library(data.table)
+library(tidyverse)
+library(sf)
+library(mapview)
+library(openair)
+library(rstatix)
+library(ggpubr)
+
+```
+
+
+Next part is to import the traffic data. *Note we will execute the NO~2~ on a separate section.*
+
+```{r}
+##-SCOOT DATA-##
+df22 <- read_parquet("glasgow2022.parquet") ## SCOOT Data
+df23 <- read_parquet("glasgow2023.parquet") ## SCOOT Data
+monitor <- read_sf("Mointor shp/useful_detector_530.shp") ## SCOOT Monitor
+lez_shp <- read_sf("Low_Emission_Zone(LEZ)/Low_Emission_Zone_(LEZ).shp") ## LEZ Boundary
+```
+
+
+Let us take a look at the traffic monitors. Using the LEZ boundary `lez_shp`, we first draw a 50 metre buffer to include stations that are adjacent to the LEZ boundary. `mapview(lez_buff_50)` 
+
+We will then clip the monitors according to the boundary. This throws us with 66 stations within the given boundary.
+
+```{r}
+# Wrap Buffer
+lez_shp |> 
+  st_transform(27700) |> 
+  st_buffer(50) -> lez_buff_50
+
+mapview(lez_buff_50)
+
+# Filtering Monitor
+lez_monitor <- st_intersection(monitor, lez_buff_50)
+
+mapview(lez_monitor) +
+  mapview(lez_buff_50)
+
+```
+
+
+Amongst the boundary, we choose four stations "GA1571_Q", "GA2401_D" for Hope Street, "GG2001_S", and "GA5371_C" for High Street.
+
+```{r}
+lez_monitor |> 
+  filter(siteId %in% c("GA1571_Q", "GA2401_D",   ## Near GLA4
+                       "GG2001_S", "GA5371_C" ## Near GHSR
+  )) |> 
+    mapview() +
+  mapview(lez_buff_50)
+```
+
+
+We just want to double check the distance of traffic monitors from the air quality monitoring stations. Using the `openair` package, we sourced the Scottish air quality network and obtained two active stations, "GLA4"(Hope St) and "GHSR"(High St).
+
+```{r}
+lez_monitor |> 
+  filter(siteId %in% c("GA1571_Q", "GA2401_D",   ## Near GLA4
+                       "GG2001_S", "GA5371_C" ## Near GHSR
+  )) -> lez_monitor_for_ap
+
+meta <- importMeta(source = "saqn", all = TRUE)
+
+meta |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
+  st_intersection(lez_shp) |> 
+  mapview()
+
+meta |> 
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) |> 
+  filter(code %in% c("GLA4", "GHSR"),
+         variable == "NO2",
+         end_date == 'ongoing') -> ap_glasgow ## Filter Glasgow
+```
+
+And the distance.
+```{r}
+## Distance 
+st_distance(ap_glasgow |> st_transform(27700) |> filter(code == "GLA4"), 
+            lez_monitor_for_ap |> filter(siteId %in% c("GA1571_Q", "GA2401_D"))) 
+
+st_distance(ap_glasgow |> st_transform(27700) |> filter(code == "GHSR"), 
+            lez_monitor_for_ap |> filter(siteId %in% c("GG2001_S", "GA5371_C"))) 
+```
+
+
+## SCOOT Data
+Now we call the SCOOT data
+
+```{r}
+## SCOOT 2023
+df23 %>%  ## <- df is the raw SCOOT Data
+  as_tibble() %>% 
+  mutate(timestamp = lubridate::as_datetime(timeStamp),
+         dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp)) |> 
+  filter(between(dt_month, 6, 8)) |> 
+  #filter(dt_month == 6 | dt_month == 8) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df23_dt
+
+
+## SCOOT 2022
+df22 %>%  ## <- df is the raw SCOOT Data
+  as_tibble() |>  
+  mutate(timestamp = lubridate::as_datetime(dt),
+         dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp))|> 
+  #filter(between(dt_month, 6, 8)) |> 
+  filter(dt_month == 6 | dt_month == 8) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df22_dt
+
+
+df22_dt |> 
+  map( ~sum(is.na(.)))
+
+df23_dt |> 
+  map( ~sum(is.na(.)))
+```
+
+
+Visualisation.
+```{r}
+df23_dt %>% 
+  filter(siteId %in% unique(lez_monitor_for_ap$siteId)) %>% 
+  group_by(dt_date, siteId, dt_month) %>% 
+  summarise(dailyflow = sum(flow)) %>% 
+  ggplot(aes(dt_date, dailyflow, colour = siteId)) +
+  geom_line() +
+  facet_wrap(~dt_month, scale = "free") +
+  theme(legend.position = "bottom") 
+#--> data between mid and end July are missing.
+
+df22_dt %>% 
+  filter(siteId %in% unique(lez_monitor_for_ap$siteId)) %>% 
+  group_by(dt_date, siteId, dt_month) %>% 
+  summarise(dailyflow = sum(flow)) %>% 
+  ggplot(aes(dt_date, dailyflow, colour = siteId)) +
+  geom_line() +
+  facet_wrap(~dt_month, scale = "free") +
+  theme(legend.position = "bottom") 
+```
 
 
 ```{r}
-#| warning: false
-2 * 2
+traffic_tbl <- 
+  bind_rows(df22_dt, df23_dt) |> 
+  mutate(location = if_else(siteId == "GA1571_Q" | siteId == "GA2401_D", "Hope St", "High St"))
+
+## Grouping Days of the Week into three categories
+traffic_tbl %>% 
+  filter(siteId %in% unique(lez_monitor_for_ap$siteId)) %>% 
+  mutate(week_group = case_when(dt_weekdays %in% c("Tuesday", "Wednesday", "Thursday") ~ "Core Weekdays",
+                                dt_weekdays %in% c("Monday", "Friday") ~ "Other Weekdays",
+                                dt_weekdays %in% c("Saturday", "Sunday") ~ "Weekends"
+  )) %>% 
+  group_by(siteId, location,week_group, dt_year, dt_date, dt_month) %>% 
+  summarise(total_flow = sum(flow)) %>% 
+  ungroup() -> df_for_analysis
+
+df_for_analysis$dt_year <- factor(df_for_analysis$dt_year)
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+df_for_analysis |> 
+  group_by(dt_date, siteId, location, dt_year, dt_month) %>% 
+  summarise(dailyflow = sum(total_flow)) %>% 
+  ggplot(aes(dt_date, dailyflow, colour = siteId)) +
+  geom_line() +
+  facet_wrap(dt_month ~dt_year , scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "bottom") 
+#* Missing data: 2023-07-12 ~ 2023-08-13 
+
+df_for_analysis |> 
+  group_by(dt_date, siteId, location, dt_year, dt_month) %>% 
+  summarise(dailyflow = sum(total_flow)) %>% 
+  ggplot(aes(dt_date, dailyflow, colour = siteId)) +
+  geom_smooth() +
+  facet_wrap(dt_month ~dt_year , scales = "free_x") +
+  theme_bw() +
+  theme(legend.position = "bottom") 
+```
+
+
+```{r}
+df_for_analysis |> 
+  group_by(siteId, week_group, dt_year) |> 
+  summarise(mean_daily_flow = mean(total_flow)) |>  
+  pivot_wider(names_from = dt_year, values_from = mean_daily_flow)
+
+
+df_for_analysis |> 
+  group_by(siteId, week_group, dt_year) |> 
+  get_summary_stats(total_flow, type = "common") |> 
+  print(n = 50)
+```
+
+
+```{r}
+df_for_analysis |> 
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+                            siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (High St)",
+                            siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
+  gghistogram(x = "total_flow",
+              add = "mean", 
+              rug = TRUE,
+              fill = "dt_year",
+              color = "dt_year", 
+              palette = c("#00AFBB", "#E7B800")) +
+  labs(x = "Averaged Daily Flow") +
+  theme(legend.title = element_blank())
+```
+
+
+```{r}
+df_for_analysis |> 
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (High St)",
+                            siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (Hope St)",
+                            siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
+  gghistogram(x = "total_flow",
+            rug = TRUE,
+            fill = "dt_year",
+            color = "dt_year", 
+            palette = c("#00AFBB", "#E7B800")) +
+  ylim(0,20) +
+  facet_wrap(~siteId, scales = "free") +
+  labs(x = "Averaged Daily Flow") +
+  theme(legend.title = element_blank())
+
+
+
+df_for_analysis |> 
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (High St)",
+                            siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (Hope St)",
+                            siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
+  ggboxplot(x = "week_group", y = "total_flow", color = "dt_year") +
+  facet_wrap(~siteId, scales = "free") +
+  labs(x = "", y = "Averaged Daily Flow")
+
+```
+
+
+
+```{r}
+df_for_analysis %>% 
+  group_by(siteId, week_group, dt_year) %>% 
+  shapiro_test(total_flow) |> 
+  mutate(p1 = if_else(p > 0.05, "Normality", "Skewed"))
+```
+
+
+
+```{r}
+df_for_analysis %>% 
+  group_by(siteId) %>% 
+  wilcox_test(total_flow ~ dt_year) |> 
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj") |> 
+  mutate(p = round(p, 3),
+         p.adj = round(p.adj, 3))
+
+
+df_for_analysis %>% 
+  group_by(siteId, week_group) %>% 
+  wilcox_test(total_flow ~ dt_year) |> 
+  adjust_pvalue(method = "bonferroni") %>%
+  add_significance("p.adj") |> 
+  mutate(p = round(p, 3),
+         p.adj = round(p.adj, 3))
+```
+
+
+
+## Air Quality
+
+We firstly import data from `openair_glasgow.RData`. This was downloaded from the `openair` package [Paper](https://doi.org/10.1016/j.envsoft.2011.09.008) 
+```{r}
+load('openair_glasgow.RData')
+```
+
+
+```{r}
+ap_glasgow |> 
+  st_transform(27700) |> 
+  st_buffer(200) |> 
+  mapview(col.regions = "red") +
+  mapview(lez_monitor) +
+  mapview(ap_glasgow, col.regions = "black")
+```
+
+
+Do the data tidying.
+```{r}
+no2_2023 |> 
+  mutate(dt_date = as_date(date),
+         dt_month = month(dt_date)) |> 
+  filter(dt_month == 6 | dt_month == 8) |> 
+  #filter(dt_month >= "2023-06-01" & dt_date <= "2023-08-31") |> 
+  group_by(code, dt_date) |> 
+  summarise(no2_daily = mean(no2, na.rm = T)) |> 
+  ungroup() |> 
+  mutate(no2_daily = ifelse(is.nan(no2_daily), NA, no2_daily),
+         dt_year = "2023") -> no2_daily_23
+
+no2_2022 |> 
+  mutate(dt_date = as_date(date),
+         dt_month = month(dt_date)) |> 
+  filter(dt_month == 6 | dt_month == 8) |> 
+  #filter(dt_date >= "2022-06-01" & dt_date <= "2022-08-31") |> 
+  group_by(code, dt_date) |> 
+  summarise(no2_daily = mean(no2, na.rm = T)) |> 
+  ungroup() |> 
+  mutate(no2_daily = ifelse(is.nan(no2_daily), NA, no2_daily),
+         dt_year = "2022") -> no2_daily_22
+
+
+## Clean data
+no2 <- bind_rows(no2_daily_22, no2_daily_23) |> 
+  mutate(dt_weekdays = weekdays(dt_date),
+         week_group = case_when(dt_weekdays %in% c("Tuesday", "Wednesday", "Thursday") ~ "Core Weekdays",
+                                dt_weekdays %in% c("Monday", "Friday") ~ "Other Weekdays",
+                                dt_weekdays %in% c("Saturday", "Sunday") ~ "Weekends"))
+
+```
+
+
+Clean stats comparing NO~2~ in 2023 to 2022
+```{r}
+
+map(no2_daily_22, ~sum(is.na(.)))
+map(no2_daily_23, ~sum(is.na(.)))
+
+
+no2 |> 
+  drop_na(no2_daily) |> 
+  group_by(code, week_group, dt_year) |> 
+  summarise(no2_daily = mean(no2_daily)) |> 
+  pivot_wider(names_from = dt_year, values_from = no2_daily)
+
+```
+
+
+Visualisation
+
+```{r}
+no2 |> 
+  drop_na(no2_daily) |> 
+  group_by(code, week_group, dt_year) |> 
+  summarise(no2_daily = mean(no2_daily)) |> 
+  pivot_wider(names_from = dt_year, values_from = no2_daily)
+
+
+no2 |> 
+  ggboxplot(x = "week_group", y = "no2_daily", color = "dt_year") +
+  facet_wrap(~code, scales = "free") +
+  labs(x = "", y = "Averaged NO2")
+
+no2 |> 
+  filter(code != "GLKP") |> 
+  ggdensity(x = "no2_daily",
+              rug = TRUE,
+              fill = "dt_year",
+              color = "dt_year", 
+              palette = c("#00AFBB", "#E7B800")) +
+  facet_wrap(~code, scales = "free") +
+  labs(x = "Averaged NO2", y = "Count") +
+  theme(legend.title = element_blank())
+
+no2 |> 
+  filter(code != "GLKP") |> 
+  gghistogram(x = "no2_daily",
+            rug = TRUE,
+            fill = "dt_year",
+            color = "dt_year", 
+            palette = c("#00AFBB", "#E7B800")) +
+  facet_wrap(~code, scales = "free") +
+  ylim(0,13) +
+  labs(x = "Averaged NO2", y = "Count") +
+  theme(legend.title = element_blank())
+```
+
+
+Statistics
+```{r}
+no2 |> 
+  group_by(code, week_group, dt_year) |> 
+  shapiro_test(no2_daily) |> 
+  mutate(p1 = if_else(p > 0.05, "Normality", "Skewed"))
+
+
+no2 |> 
+  group_by(code, week_group) |> 
+  wilcox_test(no2_daily ~ dt_year) 
+```
+
+
+
+
+
