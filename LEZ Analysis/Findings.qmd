@@ -1,0 +1,17 @@
+---
+title: "Findings Code"
+author: "Hyesop Shin"
+format: html
+---
+
+## Intro
+
+This is a code
+
+
+```{r}
+#| warning: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
