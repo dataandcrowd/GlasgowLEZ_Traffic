@@ -143,6 +143,9 @@ df22_dt |>
 
 df23_dt |> 
   map( ~sum(is.na(.)))
+#--> data between mid and end July are missing.
+#--> 2023-07-12 13:00:00 to 2023-07-26 09:00:00
+
 ```
 
 
@@ -156,7 +159,6 @@ df23_dt %>%
   geom_line() +
   facet_wrap(~dt_month, scale = "free") +
   theme(legend.position = "bottom") 
-#--> data between mid and end July are missing.
 
 df22_dt %>% 
   filter(siteId %in% unique(lez_monitor_for_ap$siteId)) %>% 
@@ -176,7 +178,8 @@ traffic_tbl <-
 
 ## Grouping Days of the Week into three categories
 traffic_tbl %>% 
-  filter(siteId %in% unique(lez_monitor_for_ap$siteId)) %>% 
+  filter(siteId %in% unique(lez_monitor_for_ap$siteId),
+         dt_month != 7) %>% 
   mutate(week_group = case_when(dt_weekdays %in% c("Tuesday", "Wednesday", "Thursday") ~ "Core Weekdays",
                                 dt_weekdays %in% c("Monday", "Friday") ~ "Other Weekdays",
                                 dt_weekdays %in% c("Saturday", "Sunday") ~ "Weekends"
@@ -190,28 +193,48 @@ df_for_analysis$dt_year <- factor(df_for_analysis$dt_year)
 ```
 
 ```{r}
+library(ggh4x)
+
 df_for_analysis |> 
   group_by(dt_date, siteId, location, dt_year, dt_month) %>% 
   summarise(dailyflow = sum(total_flow)) %>% 
+  mutate(dt_month = if_else(dt_month == "6", "June", "August"),
+         dt_month = factor(dt_month, levels = c("June", "August"))) |> 
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
   geom_line() +
-  facet_wrap(dt_month ~dt_year , scales = "free_x") +
+  labs(x = "", y = "Average daily flow") +
+  #facet_wrap(dt_month ~dt_year , scales = "free_x") +
+  facet_nested_wrap(vars(dt_month, dt_year), scales = "free_x") +
   theme_bw() +
-  theme(legend.position = "bottom") 
-#* Missing data: 2023-07-12 ~ 2023-08-13 
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),        
+        text = element_text(size=13),
+        legend.margin=margin(t=-20)) 
+
+ggsave("average daily traffic flow.jpg", width = 6, height = 4.5)
 
 df_for_analysis |> 
   group_by(dt_date, siteId, location, dt_year, dt_month) %>% 
   summarise(dailyflow = sum(total_flow)) %>% 
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
   geom_smooth() +
+  labs(x = "", y = "Average daily flow") +
   facet_wrap(dt_month ~dt_year , scales = "free_x") +
   theme_bw() +
-  theme(legend.position = "bottom") 
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        text = element_text(size=14),
+        legend.margin=margin(t=-20)) 
 ```
 
 
 ```{r}
+df_for_analysis |> 
+  group_by(siteId, dt_year) |> 
+  summarise(mean_daily_flow = mean(total_flow)) |>  
+  pivot_wider(names_from = dt_year, values_from = mean_daily_flow)
+
+
 df_for_analysis |> 
   group_by(siteId, week_group, dt_year) |> 
   summarise(mean_daily_flow = mean(total_flow)) |>  
@@ -234,46 +257,103 @@ df_for_analysis |>
   gghistogram(x = "total_flow",
               add = "mean", 
               rug = TRUE,
+              bins = 20,
               fill = "dt_year",
               color = "dt_year", 
               palette = c("#00AFBB", "#E7B800")) +
-  labs(x = "Averaged Daily Flow") +
-  theme(legend.title = element_blank())
+  labs(x = "Averaged Daily Flow", y = "Counts") +
+  theme(legend.title = element_blank(),
+        text = element_text(size=14)) 
+
+ggsave("traffic counts.jpg", width = 5, height = 3)
+
 ```
 
 
 ```{r}
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (High St)",
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
-                            siteId == "GG2001_S" ~ "GG2001_S (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
   gghistogram(x = "total_flow",
             rug = TRUE,
             fill = "dt_year",
+            bins = 15,
             color = "dt_year", 
             palette = c("#00AFBB", "#E7B800")) +
   ylim(0,20) +
   facet_wrap(~siteId, scales = "free") +
-  labs(x = "Averaged Daily Flow") +
-  theme(legend.title = element_blank())
+  labs(x = "Averaged Daily Flow", y = "Counts") +
+  theme(legend.title = element_blank(),
+        text = element_text(size=12)) 
 
+ggsave("traffic counts by station.jpg", width = 6.5, height = 4.5)
 
 
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (High St)",
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
-                            siteId == "GG2001_S" ~ "GG2001_S (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
-  ggboxplot(x = "week_group", y = "total_flow", color = "dt_year") +
+  ggboxplot(x = "dt_year", y = "total_flow", color = "dt_year") +
   facet_wrap(~siteId, scales = "free") +
-  labs(x = "", y = "Averaged Daily Flow")
+  stat_summary(fun.y = mean, geom="point",colour="darkred", size=3) +
+  labs(x = "", y = "Averaged Daily Flow") +
+  theme(legend.title = element_blank(),
+        text = element_text(size=12),
+        axis.text.x = element_text(size=10)) 
+
+ggsave("traffic counts boxplot.jpg", width = 6, height = 4.5)
+
+# Calculate means manually
+mean_data <- df_for_analysis %>%
+  group_by(week_group, dt_year, siteId) %>%
+  summarize(mean_total_flow = mean(total_flow), .groups = 'drop')
+
+
+# Calculate means manually
+mean_data <- df_for_analysis %>%
+    mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+                            siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (High St)",
+                            siteId == "GA5371_C" ~ "GA5371_C (High St)"),
+         week_group = factor(week_group)) |> 
+  group_by(week_group, dt_year, siteId) %>%
+  summarize(mean_total_flow = mean(total_flow), .groups = 'drop')
+
+
+df_for_analysis |> 
+  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+                            siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
+                            siteId == "GG2001_S" ~ "GG2001_S (High St)",
+                            siteId == "GA5371_C" ~ "GA5371_C (High St)"),
+         week_group = factor(week_group)) |> 
+ggplot(aes(x = week_group, y = total_flow, fill = dt_year)) +
+  geom_boxplot(aes(group=interaction(dt_year, week_group)), position=position_dodge(0.75)) +
+  geom_point(data = mean_data, aes(x = week_group, y = mean_total_flow, group = interaction(dt_year, week_group)),
+             position=position_dodge(0.75), size=2, color="darkred") +
+  facet_wrap(~siteId, scales = "free_y") +
+  labs(x = "", y = "Averaged Daily Flow") +
+  theme_pubr() +
+  theme(legend.title = element_blank(),
+        text = element_text(size=12),
+        axis.text.x = element_text(size=10))
+
+ggsave("traffic counts boxplot weekgroup.jpg", width = 8.5, height = 4.5)
 
 ```
 
 
 
-```{r}
+```{r normality test}
+
+df_for_analysis %>% 
+  group_by(siteId, dt_year) %>% 
+  shapiro_test(total_flow) |> 
+  mutate(p1 = if_else(p > 0.05, "Normality", "Skewed"))
+
+
 df_for_analysis %>% 
   group_by(siteId, week_group, dt_year) %>% 
   shapiro_test(total_flow) |> 
@@ -289,7 +369,7 @@ df_for_analysis %>%
   adjust_pvalue(method = "bonferroni") %>%
   add_significance("p.adj") |> 
   mutate(p = round(p, 3),
-         p.adj = round(p.adj, 3))
+         p.adj = round(p.adj, 3)) 
 
 
 df_for_analysis %>% 
@@ -315,9 +395,20 @@ load('openair_glasgow.RData')
 ap_glasgow |> 
   st_transform(27700) |> 
   st_buffer(200) |> 
-  mapview(col.regions = "red") +
+  mapview(col.regions = "red", alpha.regions = 0.2) +
   mapview(lez_monitor) +
   mapview(ap_glasgow, col.regions = "black")
+
+
+ap_glasgow |> 
+  st_transform(27700) |> 
+  #st_buffer(200) |> 
+  mapview() +
+  mapview(ap_glasgow, col.regions = "black") +
+  mapview(lez_shp |> st_transform(27700), alpha.regions = 0.2) 
+
+
+
 ```
 
 
@@ -365,9 +456,22 @@ map(no2_daily_23, ~sum(is.na(.)))
 
 no2 |> 
   drop_na(no2_daily) |> 
+  mutate(dt_month = month(dt_date)) |> 
+  filter(dt_month != 7) |> 
+  group_by(code, dt_year) |> 
+  summarise(no2_daily = mean(no2_daily)) |> 
+  pivot_wider(names_from = dt_year, values_from = no2_daily) |> 
+  mutate(diff = `2022` - `2023`)
+
+
+no2 |> 
+  drop_na(no2_daily) |> 
+  mutate(dt_month = month(dt_date)) |> 
+  filter(dt_month != 7) |> 
   group_by(code, week_group, dt_year) |> 
   summarise(no2_daily = mean(no2_daily)) |> 
-  pivot_wider(names_from = dt_year, values_from = no2_daily)
+  pivot_wider(names_from = dt_year, values_from = no2_daily) |> 
+  mutate(diff = `2022` - `2023`)
 
 ```
 
@@ -376,16 +480,44 @@ Visualisation
 
 ```{r}
 no2 |> 
-  drop_na(no2_daily) |> 
-  group_by(code, week_group, dt_year) |> 
-  summarise(no2_daily = mean(no2_daily)) |> 
-  pivot_wider(names_from = dt_year, values_from = no2_daily)
+  filter(code != "GLKP") |> 
+  ggboxplot(x = "dt_year", y = "no2_daily", color = "dt_year") +
+  facet_wrap(~code, scales = "free") +
+  stat_summary(fun.y = mean, geom="point",colour="darkred", size=3) +
+  labs(x = "", y = "Averaged NO2")+
+  theme(legend.title = element_blank(),
+        text = element_text(size=13),
+        axis.text.x = element_text(size=10))
+
+ggsave("no2 by year.jpg", width = 8.5, height = 4)
 
 
 no2 |> 
-  ggboxplot(x = "week_group", y = "no2_daily", color = "dt_year") +
+  filter(code != "GLKP") |> 
+  drop_na(no2_daily) |> 
+  mutate(dt_month = month(dt_date)) |> 
+  filter(dt_month != 7) |> 
+  group_by(code, week_group, dt_year) |> 
+  summarise(no2_daily = mean(no2_daily), .groups = 'drop') -> mean_data
+
+
+no2 |> 
+  filter(code != "GLKP") |> 
+  ggplot(aes(x = week_group, y = no2_daily, fill = dt_year)) +
+  geom_boxplot(aes(group=interaction(dt_year, week_group)), position=position_dodge(0.75)) +
+  geom_point(data = mean_data, aes(x = week_group, y = no2_daily, group = interaction(dt_year, week_group)),
+             position=position_dodge(0.75), size=2, color="darkred") +
   facet_wrap(~code, scales = "free") +
-  labs(x = "", y = "Averaged NO2")
+  labs(x = "", y = "Averaged NO2")+
+  theme_pubr() +
+  theme(legend.title = element_blank(),
+        text = element_text(size=13),
+        axis.text.x = element_text(size=10))
+
+ggsave("no2 by station.jpg", width = 8.5, height = 4)
+
+
+
 
 no2 |> 
   filter(code != "GLKP") |> 
@@ -398,32 +530,36 @@ no2 |>
   labs(x = "Averaged NO2", y = "Count") +
   theme(legend.title = element_blank())
 
-no2 |> 
-  filter(code != "GLKP") |> 
-  gghistogram(x = "no2_daily",
-            rug = TRUE,
-            fill = "dt_year",
-            color = "dt_year", 
-            palette = c("#00AFBB", "#E7B800")) +
-  facet_wrap(~code, scales = "free") +
-  ylim(0,13) +
-  labs(x = "Averaged NO2", y = "Count") +
-  theme(legend.title = element_blank())
+
 ```
 
 
 Statistics
 ```{r}
 no2 |> 
+    filter(code != "GLKP") |> 
+  group_by(code, dt_year) |> 
+  shapiro_test(no2_daily) |> 
+  mutate(p1 = if_else(p > 0.05, "Normality", "Skewed"))
+
+no2 |> 
+  filter(code != "GLKP") |> 
+  group_by(code) |> 
+  t_test(no2_daily ~ dt_year) 
+
+
+no2 |> 
+  filter(code != "GLKP") |> 
   group_by(code, week_group, dt_year) |> 
   shapiro_test(no2_daily) |> 
   mutate(p1 = if_else(p > 0.05, "Normality", "Skewed"))
 
-
 no2 |> 
+  filter(code != "GLKP") |> 
   group_by(code, week_group) |> 
-  wilcox_test(no2_daily ~ dt_year) 
-```
+  t_test(no2_daily ~ dt_year) 
+
+```````
 
 
 
