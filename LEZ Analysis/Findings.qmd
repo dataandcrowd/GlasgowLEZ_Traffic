@@ -489,7 +489,7 @@ no2 |>
         text = element_text(size=13),
         axis.text.x = element_text(size=10))
 
-ggsave("no2 by year.jpg", width = 8.5, height = 4)
+ggsave("no2 by year.jpg", width = 5, height = 4)
 
 
 no2 |> 
