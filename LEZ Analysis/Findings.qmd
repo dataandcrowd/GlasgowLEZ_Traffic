@@ -8,6 +8,8 @@ execute:
   message: false
   warning: false
 format: html
+editor_options: 
+  chunk_output_type: console
 ---
 
 ## Intro
@@ -39,6 +41,68 @@ df22 <- read_parquet("glasgow2022.parquet") ## SCOOT Data
 df23 <- read_parquet("glasgow2023.parquet") ## SCOOT Data
 monitor <- read_sf("Mointor shp/useful_detector_530.shp") ## SCOOT Monitor
 lez_shp <- read_sf("Low_Emission_Zone(LEZ)/Low_Emission_Zone_(LEZ).shp") ## LEZ Boundary
+
+## Additional input
+load("SCOOT_SEP22_SEP23.RData")
+
+```
+
+```{r dataclean}
+
+## SCOOT 2023
+df23 %>%  ## <- df is the raw SCOOT Data
+  as_tibble() %>% 
+  mutate(timestamp = lubridate::as_datetime(timeStamp),
+         dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp)) |> 
+  #filter(between(dt_month, 6, 8)) |> 
+  filter(dt_month == 8) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df23_dt
+
+
+# Adding September 2023
+dt23_sep |> 
+  select(-year) |> 
+  rename(siteId = ID,
+         timestamp = dttm) |> 
+  mutate(dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp)) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> dt23_sep_clean
+
+df23_dt <- bind_rows(df23_dt, dt23_sep_clean)
+
+
+## SCOOT 2022
+df22 %>%  ## <- df is the raw SCOOT Data
+  as_tibble() |>  
+  mutate(timestamp = lubridate::as_datetime(dt),
+         dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp))|> 
+  filter(dt_month == 8) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df22_dt
+
+
+# Adding September 2023
+dt22_sep |> 
+  select(-year) |> 
+  rename(siteId = ID,
+         timestamp = dttm) |> 
+  mutate(dt_date = date(timestamp),
+         dt_month = month(timestamp),
+         dt_weekdays = weekdays(timestamp),
+         dt_year = year(timestamp)) |> 
+  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> dt22_sep_clean
+
+df22_dt <- bind_rows(df22_dt, dt22_sep_clean)
+
+
+
 ```
 
 
@@ -109,39 +173,16 @@ st_distance(ap_glasgow |> st_transform(27700) |> filter(code == "GHSR"),
 
 
 ## SCOOT Data
-Now we call the SCOOT data
+
+Check `NA` counts.
 
 ```{r}
-## SCOOT 2023
-df23 %>%  ## <- df is the raw SCOOT Data
-  as_tibble() %>% 
-  mutate(timestamp = lubridate::as_datetime(timeStamp),
-         dt_date = date(timestamp),
-         dt_month = month(timestamp),
-         dt_weekdays = weekdays(timestamp),
-         dt_year = year(timestamp)) |> 
-  filter(between(dt_month, 6, 8)) |> 
-  #filter(dt_month == 6 | dt_month == 8) |> 
-  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df23_dt
-
-
-## SCOOT 2022
-df22 %>%  ## <- df is the raw SCOOT Data
-  as_tibble() |>  
-  mutate(timestamp = lubridate::as_datetime(dt),
-         dt_date = date(timestamp),
-         dt_month = month(timestamp),
-         dt_weekdays = weekdays(timestamp),
-         dt_year = year(timestamp))|> 
-  #filter(between(dt_month, 6, 8)) |> 
-  filter(dt_month == 6 | dt_month == 8) |> 
-  select(siteId, dt_date, dt_year, dt_month, dt_weekdays, flow) -> df22_dt
-
 
 df22_dt |> 
   map( ~sum(is.na(.)))
 
 df23_dt |> 
+  #filter(dt_month == 8) |> 
   map( ~sum(is.na(.)))
 #--> data between mid and end July are missing.
 #--> 2023-07-12 13:00:00 to 2023-07-26 09:00:00
@@ -157,7 +198,7 @@ df23_dt %>%
   summarise(dailyflow = sum(flow)) %>% 
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
   geom_line() +
-  facet_wrap(~dt_month, scale = "free") +
+  #facet_wrap(~dt_month, scale = "free") +
   theme(legend.position = "bottom") 
 
 df22_dt %>% 
@@ -166,7 +207,7 @@ df22_dt %>%
   summarise(dailyflow = sum(flow)) %>% 
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
   geom_line() +
-  facet_wrap(~dt_month, scale = "free") +
+  #facet_wrap(~dt_month, scale = "free") +
   theme(legend.position = "bottom") 
 ```
 
@@ -201,17 +242,20 @@ df_for_analysis |>
   mutate(dt_month = if_else(dt_month == "6", "June", "August"),
          dt_month = factor(dt_month, levels = c("June", "August"))) |> 
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
+  geom_smooth(linewidth = .3, linetype=9, alpha = .2) +
   geom_line() +
   labs(x = "", y = "Average daily flow") +
   #facet_wrap(dt_month ~dt_year , scales = "free_x") +
-  facet_nested_wrap(vars(dt_month, dt_year), scales = "free_x") +
+  #facet_nested_wrap(vars(dt_month, dt_year), scales = "free_x") +
+  facet_nested_wrap(vars(dt_year), scales = "free_x") +
   theme_bw() +
   theme(legend.position = "bottom",
         legend.title = element_blank(),        
         text = element_text(size=13),
+        axis.text.x = element_text(size = 8),
         legend.margin=margin(t=-20)) 
 
-ggsave("average daily traffic flow.jpg", width = 6, height = 4.5)
+ggsave("Figures/average daily traffic flow.jpg", width = 9, height = 3.5)
 
 df_for_analysis |> 
   group_by(dt_date, siteId, location, dt_year, dt_month) %>% 
@@ -219,7 +263,7 @@ df_for_analysis |>
   ggplot(aes(dt_date, dailyflow, colour = siteId)) +
   geom_smooth() +
   labs(x = "", y = "Average daily flow") +
-  facet_wrap(dt_month ~dt_year , scales = "free_x") +
+  facet_wrap( ~dt_year , scales = "free_x") +
   theme_bw() +
   theme(legend.position = "bottom",
         legend.title = element_blank(),
@@ -265,7 +309,7 @@ df_for_analysis |>
   theme(legend.title = element_blank(),
         text = element_text(size=14)) 
 
-ggsave("traffic counts.jpg", width = 5, height = 3)
+ggsave("Figures/traffic counts.jpg", width = 6, height = 3)
 
 ```
 
@@ -288,7 +332,7 @@ df_for_analysis |>
   theme(legend.title = element_blank(),
         text = element_text(size=12)) 
 
-ggsave("traffic counts by station.jpg", width = 6.5, height = 4.5)
+ggsave("Figures/traffic counts by station.jpg", width = 6.5, height = 4.5)
 
 
 df_for_analysis |> 
