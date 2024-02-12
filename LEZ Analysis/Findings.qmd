@@ -127,11 +127,11 @@ mapview(lez_monitor) +
 ```
 
 
-Amongst the boundary, we choose four stations "GA1571_Q", "GA2401_D" for Hope Street, "GG2001_S", and "GA5371_C" for High Street.
+Amongst the boundary, we choose four stations "GA1321_B", "GA2401_D" for Hope Street, "GG2001_S", and "GA5371_C" for High Street.
 
 ```{r}
 lez_monitor |> 
-  filter(siteId %in% c("GA1571_Q", "GA2401_D",   ## Near GLA4
+  filter(siteId %in% c("GA1321_B", "GA2401_D",   ## Near GLA4
                        "GG2001_S", "GA5371_C" ## Near GHSR
   )) |> 
     mapview() +
@@ -143,7 +143,7 @@ We just want to double check the distance of traffic monitors from the air quali
 
 ```{r}
 lez_monitor |> 
-  filter(siteId %in% c("GA1571_Q", "GA2401_D",   ## Near GLA4
+  filter(siteId %in% c("GA1321_B", "GA2401_D",   ## Near GLA4
                        "GG2001_S", "GA5371_C" ## Near GHSR
   )) -> lez_monitor_for_ap
 
@@ -165,7 +165,7 @@ And the distance.
 ```{r}
 ## Distance 
 st_distance(ap_glasgow |> st_transform(27700) |> filter(code == "GLA4"), 
-            lez_monitor_for_ap |> filter(siteId %in% c("GA1571_Q", "GA2401_D"))) 
+            lez_monitor_for_ap |> filter(siteId %in% c("GA1321_B", "GA2401_D"))) 
 
 st_distance(ap_glasgow |> st_transform(27700) |> filter(code == "GHSR"), 
             lez_monitor_for_ap |> filter(siteId %in% c("GG2001_S", "GA5371_C"))) 
@@ -215,7 +215,7 @@ df22_dt %>%
 ```{r}
 traffic_tbl <- 
   bind_rows(df22_dt, df23_dt) |> 
-  mutate(location = if_else(siteId == "GA1571_Q" | siteId == "GA2401_D", "Hope St", "High St"))
+  mutate(location = if_else(siteId == "GA1321_B" | siteId == "GA2401_D", "Hope St", "High St"))
 
 ## Grouping Days of the Week into three categories
 traffic_tbl %>% 
@@ -294,7 +294,7 @@ df_for_analysis |>
 
 ```{r}
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+  mutate(siteId = case_when(siteId == "GA1321_B" ~ "GA1321_B (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
                             siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
@@ -316,7 +316,7 @@ ggsave("Figures/traffic counts.jpg", width = 6, height = 3)
 
 ```{r}
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+  mutate(siteId = case_when(siteId == "GA1321_B" ~ "GA1321_B (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
                             siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
@@ -336,7 +336,7 @@ ggsave("Figures/traffic counts by station.jpg", width = 6.5, height = 4.5)
 
 
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+  mutate(siteId = case_when(siteId == "GA1321_B" ~ "GA1321_B (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
                             siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)")) |> 
@@ -358,7 +358,7 @@ mean_data <- df_for_analysis %>%
 
 # Calculate means manually
 mean_data <- df_for_analysis %>%
-    mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+    mutate(siteId = case_when(siteId == "GA1321_B" ~ "GA1321_B (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
                             siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)"),
@@ -368,7 +368,7 @@ mean_data <- df_for_analysis %>%
 
 
 df_for_analysis |> 
-  mutate(siteId = case_when(siteId == "GA1571_Q" ~ "GA1571_Q (Hope St)",
+  mutate(siteId = case_when(siteId == "GA1321_B" ~ "GA1321_B (Hope St)",
                             siteId == "GA2401_D" ~ "GA2401_D (Hope St)",
                             siteId == "GG2001_S" ~ "GG2001_S (High St)",
                             siteId == "GA5371_C" ~ "GA5371_C (High St)"),
