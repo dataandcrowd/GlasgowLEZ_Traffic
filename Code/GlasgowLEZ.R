@@ -105,21 +105,38 @@ no2_22 |>
   filter(code == "GHSR") |> 
   full_join(traffic_22 |> filter(siteId == "GG2001_S"), by = c("dt_date", "dt_year", "week_group")) |> 
   full_join(weather_by_week, by = c("dt_date", "week_group")) |> 
-  mutate(north_south = ws * sin(wd * pi / 180),
-         east_west = ws * cos(wd * pi / 180))  -> df_highst_22
+  mutate(u_wind = ws * sin(wd * pi / 180),
+         v_wind = ws * cos(wd * pi / 180))  -> df_highst_22
 
 df_highst_22
+
+gam_highst_22 <- gam(no2_daily ~ s(ws) + s(u_wind) + s(v_wind) + s(temp) + s(hum), data = df_highst_22)
+summary(gam_highst_22)
+
+df_highst_22$residuals <- residuals(gam_highst_22)
+df_highst_22$no2_normalised <- df_highst_22$residuals + mean(df_highst_22$no2_daily) 
+df_highst_22
+
+
 
 # High St 2023
 no2_23 |> 
   filter(code == "GHSR") |> 
   full_join(traffic_23 |> filter(siteId == "GG2001_S"), by = c("dt_date", "dt_year", "week_group")) |> 
   full_join(weather_by_week23, by = c("dt_date", "week_group")) |> 
-  mutate(north_south = ws * sin(wd * pi / 180),
-         east_west = ws * cos(wd * pi / 180)) -> df_highst_23
+  mutate(u_wind = ws * sin(wd * pi / 180),
+         v_wind = ws * cos(wd * pi / 180)) -> df_highst_23
 
 df_highst_23
- 
+
+gam_highst_23 <- gam(no2_daily ~ s(ws) + s(u_wind) + s(v_wind) + s(temp) + s(hum), data = df_highst_23)
+summary(gam_highst_23)
+
+df_highst_23$residuals <- residuals(gam_highst_23)
+df_highst_23$no2_normalised <- df_highst_23$residuals + mean(df_highst_23$no2_daily) 
+df_highst_23
+
+
 bind_rows(df_highst_22, df_highst_23) -> highst
 highst
 
@@ -128,12 +145,8 @@ highst
 # The sine wind runs parallel to the y axis. 
 # A positive sine wind is from the south, and a negative sine wind is from the north.
 
-gam_model <- gam(no2_daily ~ s(ws) + s(north_south) + s(east_west) + s(temp) + s(hum), data = highst)
-summary(gam_model)
 
-highst$NO2_normalised <- residuals(gam_model)
-
-ggplot(highst, aes(x = dt_date, y = NO2_normalised)) +
+ggplot(highst, aes(x = dt_date, y = no2_normalised)) +
   geom_line() +
   facet_wrap(~dt_year, scales = "free_x") +
   labs(title = "Normalized NO2 Concentration",
@@ -146,30 +159,40 @@ no2_22 |>
   filter(code == "GLA4") |> 
   full_join(traffic_22 |> filter(siteId == "GA2401_D"), by = c("dt_date", "dt_year", "week_group")) |> 
   full_join(weather_by_week, by = c("dt_date", "week_group")) |> 
-  mutate(north_south = ws * sin(wd * pi / 180),
-         east_west = ws * cos(wd * pi / 180)) -> df_hopest22
+  mutate(u_wind = ws * sin(wd * pi / 180),
+         v_wind = ws * cos(wd * pi / 180)) -> df_hopest22
 
 df_hopest22
+
+gam_hopest_22 <- gam(no2_daily ~ s(ws) + s(u_wind) + s(v_wind) + s(temp) + s(hum), data = df_hopest22)
+summary(gam_hopest_22)
+
+df_hopest22$residuals <- residuals(gam_hopest_22)
+df_hopest22$no2_normalised <- df_hopest22$residuals + mean(df_hopest22$no2_daily) 
+df_hopest22
+
+
 
 no2_23 |> 
   filter(code == "GLA4") |> 
   full_join(traffic_23 |> filter(siteId == "GA2401_D"), by = c("dt_date", "dt_year","week_group")) |> 
   full_join(weather_by_week23, by = c("dt_date", "week_group")) |> 
-  mutate(north_south = ws * sin(wd * pi / 180),
-         east_west = ws * cos(wd * pi / 180)) -> df_hopest23
+  mutate(u_wind = ws * sin(wd * pi / 180),
+         v_wind = ws * cos(wd * pi / 180)) -> df_hopest23
 
 df_hopest23
 
+gam_hopest_23 <- gam(no2_daily ~ s(ws) + s(u_wind) + s(v_wind) + s(temp) + s(hum), data = df_hopest23)
+summary(gam_hopest_23)
+
+df_hopest23$residuals <- residuals(gam_hopest_23)
+df_hopest23$no2_normalised <- df_hopest23$residuals + mean(df_hopest23$no2_daily) 
+df_hopest23
 
 bind_rows(df_hopest22, df_hopest23) -> hopest
 
 
-gam_model2 <- gam(no2_daily ~ s(ws) + s(north_south) + s(east_west) + s(temp) + s(hum), data = hopest)
-summary(gam_model2)
-
-hopest$NO2_normalised <- residuals(gam_model2)
-
-ggplot(hopest, aes(x = dt_date, y = NO2_normalised)) +
+ggplot(hopest, aes(x = dt_date, y = no2_normalised)) +
   geom_line() +
   facet_wrap(~dt_year, scales = "free_x") +
   labs(title = "Normalised NO2 Concentration",
@@ -186,39 +209,74 @@ highst |>
   group_by(week_group, dt_year) |> 
   summarise(traffic = mean(total_flow),
             traffic_sd = sd(total_flow),
-            no2 = mean(no2_daily),
-            no2_sd = sd(no2_daily))
+            traffic_med = median(total_flow),
+            no2 = mean(no2_normalised),
+            no2_sd = sd(no2_normalised),
+            no2_med = median(no2_normalised))
 
 
 hopest |> 
   group_by(week_group, dt_year) |> 
   summarise(traffic = mean(total_flow),
             traffic_sd = sd(total_flow),
-            no2 = mean(no2_daily),
-            no2_sd = sd(no2_daily))
+            traffic_med = median(total_flow),
+            no2 = mean(no2_normalised),
+            no2_sd = sd(no2_normalised),
+            no2_med = median(no2_normalised))
 
 
 ## Wilcox Signed ranked test
 # Traffic
 highst |> 
+  group_by(dt_year, week_group) |> 
+  summarise(n = n())
+
+
+# Set seed for reproducibility (optional)
+set.seed(123)
+
+# Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022
+highst1 <- highst %>%
+  filter(!(row_number() %in% sample(which(week_group == "Other Weekdays" & dt_year == 2022), 1)))
+
+# Remove one randomly selected row from "Weekends" where "dt_year" == 2023
+highst2 <- highst1 %>%
+  filter(!(row_number() %in% sample(which(week_group == "Weekends" & dt_year == 2023), 1)))
+
+highst2 |> 
   group_by(week_group) |> 
-  wilcox_test(total_flow ~ dt_year)|> 
+  wilcox_test(total_flow ~ dt_year, paired = T)|> 
   as.data.frame()
 
-hopest |> 
+
+
+# Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022
+hopest1 <- hopest %>%
+  filter(!(row_number() %in% sample(which(week_group == "Other Weekdays" & dt_year == 2022), 1)))
+
+# Remove one randomly selected row from "Weekends" where "dt_year" == 2023
+hopest2 <- hopest1 %>%
+  filter(!(row_number() %in% sample(which(week_group == "Weekends" & dt_year == 2023), 1)))
+
+
+
+hopest2 |> 
   group_by(week_group) |> 
-  wilcox_test(total_flow ~ dt_year)|> 
+  wilcox_test(total_flow ~ dt_year, paired = T)|> 
   as.data.frame()
+
+
+
 
 # Normalised NO2
-highst |> 
+highst2 |> 
   group_by(week_group) |> 
-  wilcox_test(NO2_normalised ~ dt_year) |> 
+  wilcox_test(no2_normalised ~ dt_year, paired = T) |> 
   as.data.frame()
 
-hopest |> 
+hopest2 |> 
   group_by(week_group) |> 
-  wilcox_test(NO2_normalised ~ dt_year)|> 
+  wilcox_test(no2_normalised ~ dt_year, paired = T)|> 
   as.data.frame()
 
 
@@ -242,7 +300,7 @@ ggplot(highst, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
   ) +
   scale_x_discrete(labels = function(x) gsub("\\.", "\n", x))  # Replace dots with newlines in x-axis labels
 
-ggsave("traffic_flow_highst.jpg", width = 6.5, height = 5.5)
+#ggsave("traffic_flow_highst.jpg", width = 6.5, height = 5.5)
 
 
 ggplot(hopest, aes(x = interaction(dt_year, week_group), y = total_flow, fill = dt_year)) +
@@ -263,13 +321,13 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
   ) +
   scale_x_discrete(labels = function(x) gsub("\\.", "\n", x))  # Replace dots with newlines in x-axis labels
 
-ggsave("traffic_flow_hopest.jpg", width = 6.5, height = 5.5)
+#ggsave("traffic_flow_hopest.jpg", width = 6.5, height = 5.5)
 
 # NO2 Normalized Comparison
-combined_range <- range(c(highst$NO2_normalised, hopest$NO2_normalised))
+combined_range <- range(c(highst$no2_normalised, hopest$no2_normalised))
 
 
-ggplot(highst, aes(x = interaction(dt_year, week_group), y = NO2_normalised, fill = dt_year)) +
+ggplot(highst, aes(x = interaction(dt_year, week_group), y = no2_normalised, fill = dt_year)) +
   geom_boxplot(outlier.shape = NA) +  # Remove outlier points
   stat_summary(fun=mean, geom="point", shape=18, size=3, color="black", fill="black") +  # Add mean points
   labs(
@@ -288,10 +346,10 @@ ggplot(highst, aes(x = interaction(dt_year, week_group), y = NO2_normalised, fil
   scale_x_discrete(labels = function(x) gsub("\\.", "\n", x)) +
   scale_y_continuous(limit = combined_range)
 
-ggsave("normalized_no2_highst.jpg", width = 6.5, height = 5.5)
+#ggsave("normalized_no2_highst.jpg", width = 6.5, height = 5.5)
 
 
-ggplot(hopest, aes(x = interaction(dt_year, week_group), y = NO2_normalised, fill = dt_year)) +
+ggplot(hopest, aes(x = interaction(dt_year, week_group), y = no2_normalised, fill = dt_year)) +
   geom_boxplot(outlier.shape = NA) +  # Remove outlier points
   stat_summary(fun=mean, geom="point", shape=18, size=3, color="black", fill="black") +  # Add mean points
   labs(
@@ -310,4 +368,4 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = NO2_normalised, fil
   scale_x_discrete(labels = function(x) gsub("\\.", "\n", x)) +
   scale_y_continuous(limits = combined_range)
 
-ggsave("normalized_no2_hopest.jpg", width = 6.5, height = 5.5)
+#ggsave("normalized_no2_hopest.jpg", width = 6.5, height = 5.5)
