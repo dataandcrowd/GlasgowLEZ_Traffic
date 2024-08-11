@@ -1,0 +1,23 @@
+---
+title: "Glasgow LEZ step by step source code"
+subtitle: "Findings Transport"
+format: html
+editor: source
+---
+
+## Install packages
+
+```{r}
+options(scipen = 999)
+
+library(arrow)
+library(tidyverse)
+library(sf)
+library(mapview)
+library(openair)
+library(rstatix)
+library(mgcv)
+
+
+```
+
