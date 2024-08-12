@@ -156,7 +156,7 @@ Normalising NO~2~ with met data is a very important process to compare the conce
 
 To convert the degree convention to a mathematical convention we used the metric stated below. Degrees are converted to radians by multiplying by Radian per Degree (2π / 360 = 0.01745329).
 
-![image](https://hackmd.io/_uploads/r1zTc0w9R.png)
+![image](https://hackmd-prod-images.s3-ap-northeast-1.amazonaws.com/uploads/upload_7e086dee6fe7dffb3da8ae634e921a10.png?AWSAccessKeyId=AKIA3XSAAW6AWSKNINWO&Expires=1723503291&Signature=3Ecpx0RlCowzDROQLQue7W1%2BXhU%3D)
 
 *u* component represents wind blowing to the East (confusingly known as a "westerly"). *v* is wind to the North (a "southerly" ).
 
