@@ -1,13 +1,17 @@
 ---
 title: "Glasgow LEZ step by step source code"
 subtitle: "Findings Transport"
-format: html
+author: "Hyesop Shin"
+format:
+  html:
+    toc: true
 editor: source
 editor_options: 
   chunk_output_type: console
 ---
 
-Here is a step-by-step process of our analysis. We made sure that is fully reproducible.
+
+Here is a step-by-step process of our analysis. We ensure that the codes are fully reproducible.
 
 ## Import packages
 For the analysis, we used a few packages `tidyverse` for data cleaning, analysis, and visualisation, `mgcv` for Generalised Additive Models (GAM), and `rstatix` for Wilcox Sign Rank Test. Note `sf`, `mapview`, and `openair` packages were used to import dataset and explore the preprocessed dataset, so we left them.
@@ -27,7 +31,11 @@ library(mgcv)
 
 
 ## Import Files
-For traffic data, we load the traffic csv (originally created by Li et al. [(2024)](https://doi.org/10.31219/osf.io/qgf2j)). We choose the study period August 1st to September 30th in both 2022 and 2023.
+
+For traffic data, we load the traffic csv.
+To access the original traffic dataset please visit the `Raw Data/Raw data SCOOT 2022/2023` folders (originally created by Li et al. [(2024)](https://doi.org/10.31219/osf.io/qgf2j)). We chose the study period August 1st to September 30th in both 2022 and 2023.
+
+For more information about traffic, please refer to the UBDC webpage https://www.ubdc.ac.uk/news/new-high-resolution-traffic-flow-dataset-available-from-ubdc.
 
 ```{r}
 traffic_raw <- read_csv("traffic.csv")
@@ -49,7 +57,9 @@ traffic_raw |>
 traffic_23
 ```
 
-The same applies to NO~2~.
+For NO~2~, we used the `openair` R package and downloaded Glasgow's High Street (GHSR) and Hope Street (GLA4) for which the roadside data were available.
+
+Given the dataset, we filtered the data to align with the traffic data, and converted the years to factors which is a plot-friendly format in R. 
 
 ```{r}
 no2 <- read_csv("no2.csv")
@@ -70,7 +80,13 @@ no2 |>
 no2_23
 ```
 
-Weather
+Meteorological data was downloaded from the nearest observation station from Glasgow city centre. By far Clincarthill (4.3km away) was the closest station. Using this [link](https://wow.metoffice.gov.uk/observations/details/20240719grm7461f6he69kyhyyguiqktba), we manually downloaded August-Sep 2022-2023. 
+
+Now, the next step is important. We first convert the wind direction from compass (e.g. NW) to meteorological convention (0-360 degrees). In the later stage, this will change to a mathematical convention.
+
+Another step is that we are going to group the days of the week as Core weekdays (Tue-Thu), Other weekdays (Mon, Fri), and Weekends (Sat-Sun).
+
+
 
 ```{r}
 cc22_aug <- read_csv("clincarthill_22_aug.csv")
@@ -133,9 +149,21 @@ cc23 |>
 ```
 
 
-## High Street: Normalising NO2
+## Normalising NO~2~
+### High Street
 
-Here I used `no2_normalised` to assign variables. This is because I use UK English in my day to day life.
+Normalising NO~2~ with met data is a very important process to compare the concentration pre- to post- LEZ. Here I used `no2_normalised` to assign variables. This is because I use UK English in my day to day life.
+
+To convert the degree convention to a mathematical convention we used the metric stated below. Degrees are converted to radians by multiplying by Radian per Degree (2π / 360 = 0.01745329).
+
+![image](https://hackmd.io/_uploads/r1zTc0w9R.png)
+
+*u* component represents wind blowing to the East (confusingly known as a "westerly"). *v* is wind to the North (a "southerly" ).
+
+For more information, please refer to [this link](https://www.researchgate.net/publication/262766424_Technical_note_Averaging_wind_speeds_and_directions).
+
+For the normalising process, we used the `gam()` function and smoothed windspeed(ws), easterly & southerly wind directtions, temperature, and relative humidity.
+
 
 ```{r}
 no2_22 |> 
@@ -188,7 +216,9 @@ ggplot(highst, aes(x = dt_date, y = no2_normalised)) +
        y = "Normalised NO2")
 ```
 
-## Hope Street
+### Hope Street
+Same work applies for Hope Street too.
+
 
 ```{r}
 no2_22 |> 
@@ -228,6 +258,8 @@ df_hopest23
 bind_rows(df_hopest22, df_hopest23) -> hopest
 ```
 
+Here is a plot.
+
 
 ```{r}
 ggplot(hopest, aes(x = dt_date, y = no2_normalised)) +
@@ -239,7 +271,13 @@ ggplot(hopest, aes(x = dt_date, y = no2_normalised)) +
 
 ```
 
-## Removing dates to match statistical test
+
+## Wilcoxon Sign Rank Test
+### Removing dates to match statistical test
+
+Okay now, is it now time to move on to the stats test? No! We have one more step to go 😅
+
+Since this study compares 2022 to 2023 by week day categories, we need to makes sure that the numbers of days are equivalent between the two groups.
 
 ```{r}
 highst |> 
@@ -247,12 +285,17 @@ highst |>
   summarise(n = n())
 ```
 
+In High Street, we see that the core weekdays are equal, but the other weekdays and weekends have a difference.
+
 
 ```{r}
 hopest |> 
   group_by(dt_year, week_group) |> 
   summarise(n = n())
 ```
+
+Sam job is done for Hope Street.
+
 
 ```{r}
 # Set seed for reproducibility (optional)
@@ -295,10 +338,12 @@ hopest |>
             no2_med = median(no2_normalised))
 ```
 
+### Traffic
 
-## Traffic
+Okay, now we are ready to run the Wilcox Signed Rank Test. Note this is a "paired" test, thus the observations before and after have to match perfectly.
 
-High St
+First, we run the code for High Street.
+
 
 ```{r}
 highst2 |> 
@@ -329,8 +374,7 @@ ggplot(highst, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
 #ggsave("traffic_flow_highst.jpg", width = 6.5, height = 5.5)
 ```
 
-
-Hope St
+We do the same job for Hope Street.
 
 ```{r}
 hopest2 |> 
@@ -362,7 +406,7 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
 ```
 
 
-## NO2
+### NO~2~
 
 High Street
 
@@ -431,5 +475,6 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = no2_normalised, fil
 #ggsave("normalized_no2_hopest.jpg", width = 6.5, height = 5.5)
 
 ```
+
 
 
