@@ -124,19 +124,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Here is a step-by-step process of our analysis. We ensure that the codes are fully reproducible.</p>
+<p>Here is a step-by-step process of our analysis. We ensure that the codes are fully reproducible. We ran the code on a macOS machine. If you’re using a different operating system or have a different language set as your locale, you may encounter some errors.</p>
 <section id="import-packages" class="level2">
 <h2 class="anchored" data-anchor-id="import-packages">Import packages</h2>
 <p>For the analysis, we used a few packages <code>tidyverse</code> for data cleaning, analysis, and visualisation, <code>mgcv</code> for Generalised Additive Models (GAM), and <code>rstatix</code> for Wilcox Sign Rank Test. Note <code>sf</code>, <code>mapview</code>, and <code>openair</code> packages were used to import dataset and explore the preprocessed dataset, so we left them.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">scipen =</span> <span class="dv">999</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">#library(sf)</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">#library(mapview)</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#library(openair)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggplot2' was built under R version 4.3.1</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#library(sf)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#library(mapview)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co">#library(openair)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="import-files" class="level2">
@@ -144,25 +147,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>For traffic data, we load the traffic csv. To access the original traffic dataset please visit the <code>Raw Data/Raw data SCOOT 2022/2023</code> folders (originally created by Li et al.&nbsp;<a href="https://doi.org/10.31219/osf.io/qgf2j">(2024)</a>). We chose the study period August 1st to September 30th in both 2022 and 2023.</p>
 <p>For more information about traffic, please refer to the UBDC webpage https://www.ubdc.ac.uk/news/new-high-resolution-traffic-flow-dataset-available-from-ubdc.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>traffic_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"traffic.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 488 Columns: 7
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (3): siteId, location, week_group
-dbl  (3): dt_year, dt_month, total_flow
-date (1): dt_date
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>traffic_raw <span class="sc">|&gt;</span> </span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2022-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2022-09-30"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(dt_year)) <span class="sc">|&gt;</span> </span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(siteId, dt_date, dt_year, week_group, total_flow) <span class="sc">|&gt;</span> </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(dt_date) <span class="ot">-&gt;</span> traffic_22</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>traffic_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>traffic_raw <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"traffic.csv"</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>traffic_raw <span class="sc">|&gt;</span> </span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2022-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2022-09-30"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(dt_year)) <span class="sc">|&gt;</span> </span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(siteId, dt_date, dt_year, week_group, total_flow) <span class="sc">|&gt;</span> </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(dt_date) <span class="ot">-&gt;</span> traffic_22</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>traffic_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 244 × 5
    siteId   dt_date    dt_year week_group     total_flow
@@ -206,24 +199,14 @@ date (1): dt_date
 <p>For NO<sub>2</sub>, we used the <code>openair</code> R package and downloaded Glasgow’s High Street (GHSR) and Hope Street (GLA4) for which the roadside data were available.</p>
 <p>Given the dataset, we filtered the data to align with the traffic data, and converted the years to factors which is a plot-friendly format in R.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>no2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"no2.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 774 Columns: 6
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr  (3): code, dt_weekdays, week_group
-dbl  (2): no2_daily, dt_year
-date (1): dt_date
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>no2 <span class="sc">|&gt;</span> </span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2022-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2022-09-30"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(code, dt_date, week_group, no2_daily) <span class="sc">|&gt;</span> </span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(<span class="dv">2022</span>)) <span class="ot">-&gt;</span> no2_22</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>no2_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>no2 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"no2.csv"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>no2 <span class="sc">|&gt;</span> </span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2022-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2022-09-30"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(code, dt_date, week_group, no2_daily) <span class="sc">|&gt;</span> </span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(<span class="dv">2022</span>)) <span class="ot">-&gt;</span> no2_22</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>no2_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 183 × 5
    code  dt_date    week_group     no2_daily dt_year
@@ -240,12 +223,12 @@ date (1): dt_date
 10 GHSR  2022-08-10 Core Weekdays      21.4  2022   
 # ℹ 173 more rows</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>no2 <span class="sc">|&gt;</span> </span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2023-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2023-09-30"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(code, dt_date, week_group, no2_daily) <span class="sc">|&gt;</span> </span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(<span class="dv">2023</span>)) <span class="ot">-&gt;</span> no2_23</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>no2_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>no2 <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(dt_date <span class="sc">&gt;=</span> <span class="st">"2023-08-01"</span> <span class="sc">&amp;</span> dt_date <span class="sc">&lt;=</span> <span class="st">"2023-09-30"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(code, dt_date, week_group, no2_daily) <span class="sc">|&gt;</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">dt_year =</span> <span class="fu">as.factor</span>(<span class="dv">2023</span>)) <span class="ot">-&gt;</span> no2_23</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>no2_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 183 × 5
    code  dt_date    week_group     no2_daily dt_year
@@ -267,139 +250,85 @@ date (1): dt_date
 <p>Now, the next step is important. We first convert the wind direction from compass (e.g.&nbsp;NW) to meteorological convention (0-360 degrees). In the later stage, this will change to a mathematical convention.</p>
 <p>Another step is that we are going to group the days of the week as Core weekdays (Tue-Thu), Other weekdays (Mon, Fri), and Weekends (Sat-Sun).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cc22_aug <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_22_aug.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>cc22_aug <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_22_aug.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
 e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 8791 Columns: 61
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr   (2): Id, Site Id
-dbl  (11): Longitude, Latitude, Air Temperature, Dew Point, Pressure (At Sta...
-lgl  (47): Wet Bulb, Concrete Temp., Grass Temp., Min. Temp. (last 24hr), Ma...
-dttm  (1): Report Date / Time
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cc22_sep <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_22_sep.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>cc22_sep <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_22_sep.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
 e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 8495 Columns: 61
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr   (2): Id, Site Id
-dbl  (11): Longitude, Latitude, Air Temperature, Dew Point, Pressure (At Sta...
-lgl  (47): Wet Bulb, Concrete Temp., Grass Temp., Min. Temp. (last 24hr), Ma...
-dttm  (1): Report Date / Time
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>cc23_aug <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_23_aug.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>cc23_aug <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_23_aug.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
 e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 8799 Columns: 61
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr   (2): Id, Site Id
-dbl  (11): Longitude, Latitude, Air Temperature, Dew Point, Pressure (At Sta...
-lgl  (47): Wet Bulb, Concrete Temp., Grass Temp., Min. Temp. (last 24hr), Ma...
-dttm  (1): Report Date / Time
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>cc23_sep <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_23_sep.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>cc23_sep <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"clincarthill_23_sep.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning: One or more parsing issues, call `problems()` on your data frame for details,
 e.g.:
   dat &lt;- vroom(...)
   problems(dat)</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 8473 Columns: 61
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr   (2): Id, Site Id
-dbl  (11): Longitude, Latitude, Air Temperature, Dew Point, Pressure (At Sta...
-lgl  (47): Wet Bulb, Concrete Temp., Grass Temp., Min. Temp. (last 24hr), Ma...
-dttm  (1): Report Date / Time
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>cc22 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(cc22_aug, cc22_sep)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>cc23 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(cc23_aug, cc23_sep)</span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a named vector mapping compass directions to degrees</span></span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>compass_to_degrees <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">N =</span> <span class="dv">0</span>, <span class="at">NNE =</span> <span class="fl">22.5</span>, <span class="at">NE =</span> <span class="dv">45</span>, <span class="at">ENE =</span> <span class="fl">67.5</span>,</span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">E =</span> <span class="dv">90</span>, <span class="at">ESE =</span> <span class="fl">112.5</span>, <span class="at">SE =</span> <span class="dv">135</span>, <span class="at">SSE =</span> <span class="fl">157.5</span>,</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">S =</span> <span class="dv">180</span>, <span class="at">SSW =</span> <span class="fl">202.5</span>, <span class="at">SW =</span> <span class="dv">225</span>, <span class="at">WSW =</span> <span class="fl">247.5</span>,</span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">W =</span> <span class="dv">270</span>, <span class="at">WNW =</span> <span class="fl">292.5</span>, <span class="at">NW =</span> <span class="dv">315</span>, <span class="at">NNW =</span> <span class="fl">337.5</span></span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>cc22 <span class="sc">|&gt;</span> </span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">dttm =</span> <span class="st">`</span><span class="at">Report Date / Time</span><span class="st">`</span>,</span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">temp =</span> <span class="st">`</span><span class="at">Air Temperature</span><span class="st">`</span>,</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">hum =</span> <span class="st">`</span><span class="at">Relative Humidity</span><span class="st">`</span>,</span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">ws =</span> <span class="st">`</span><span class="at">Wind Speed</span><span class="st">`</span>,                                                     </span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">wd =</span> <span class="st">`</span><span class="at">Wind Direction</span><span class="st">`</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(dttm, temp, hum, ws, wd) <span class="sc">|&gt;</span> </span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">day_name =</span> <span class="fu">wday</span>(dttm, <span class="at">label=</span><span class="cn">TRUE</span>),</span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">dt_date =</span> <span class="fu">as_date</span>(dttm),</span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">week_group =</span> <span class="fu">case_when</span>(day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Mon"</span>, <span class="st">"Fri"</span>) <span class="sc">~</span> <span class="st">"Other Weekdays"</span>,</span>
-<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Tue"</span>, <span class="st">"Wed"</span>, <span class="st">"Thu"</span>) <span class="sc">~</span> <span class="st">"Core Weekdays"</span>,</span>
-<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Sat"</span>, <span class="st">"Sun"</span>) <span class="sc">~</span> <span class="st">"Weekends"</span>)</span>
-<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_date, week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ws =</span> <span class="fu">mean</span>(ws, <span class="at">na.rm =</span> T),</span>
-<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a>            <span class="at">wd  =</span> <span class="fu">mean</span>(wd, <span class="at">na.rm =</span> T),</span>
-<span id="cb26-28"><a href="#cb26-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">hum =</span> <span class="fu">mean</span>(hum, <span class="at">na.rm =</span> T),</span>
-<span id="cb26-29"><a href="#cb26-29" aria-hidden="true" tabindex="-1"></a>            <span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span> </span>
-<span id="cb26-30"><a href="#cb26-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="ot">-&gt;</span> weather_by_week</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>`summarise()` has grouped output by 'dt_date'. You can override using the
-`.groups` argument.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>cc23 <span class="sc">|&gt;</span> </span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">dttm =</span> <span class="st">`</span><span class="at">Report Date / Time</span><span class="st">`</span>,</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">temp =</span> <span class="st">`</span><span class="at">Air Temperature</span><span class="st">`</span>,</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">hum =</span> <span class="st">`</span><span class="at">Relative Humidity</span><span class="st">`</span>,</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ws =</span> <span class="st">`</span><span class="at">Wind Speed</span><span class="st">`</span>,                                                     </span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">wd =</span> <span class="st">`</span><span class="at">Wind Direction</span><span class="st">`</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(dttm, temp, hum, ws, wd) <span class="sc">|&gt;</span> </span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">day_name =</span> <span class="fu">wday</span>(dttm, <span class="at">label=</span><span class="cn">TRUE</span>),</span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">dt_date =</span> <span class="fu">as_date</span>(dttm),</span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">week_group =</span> <span class="fu">case_when</span>(day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Mon"</span>, <span class="st">"Fri"</span>) <span class="sc">~</span> <span class="st">"Other Weekdays"</span>,</span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Tue"</span>, <span class="st">"Wed"</span>, <span class="st">"Thu"</span>) <span class="sc">~</span> <span class="st">"Core Weekdays"</span>,</span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Sat"</span>, <span class="st">"Sun"</span>) <span class="sc">~</span> <span class="st">"Weekends"</span>)</span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_date, week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ws =</span> <span class="fu">mean</span>(ws, <span class="at">na.rm =</span> T),</span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">wd  =</span> <span class="fu">mean</span>(wd, <span class="at">na.rm =</span> T),</span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">hum =</span> <span class="fu">mean</span>(hum, <span class="at">na.rm =</span> T),</span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span> </span>
-<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="ot">-&gt;</span> weather_by_week23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>`summarise()` has grouped output by 'dt_date'. You can override using the
-`.groups` argument.</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>cc22 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(cc22_aug, cc22_sep)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>cc23 <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(cc23_aug, cc23_sep)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a named vector mapping compass directions to degrees</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>compass_to_degrees <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">N =</span> <span class="dv">0</span>, <span class="at">NNE =</span> <span class="fl">22.5</span>, <span class="at">NE =</span> <span class="dv">45</span>, <span class="at">ENE =</span> <span class="fl">67.5</span>,</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">E =</span> <span class="dv">90</span>, <span class="at">ESE =</span> <span class="fl">112.5</span>, <span class="at">SE =</span> <span class="dv">135</span>, <span class="at">SSE =</span> <span class="fl">157.5</span>,</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">S =</span> <span class="dv">180</span>, <span class="at">SSW =</span> <span class="fl">202.5</span>, <span class="at">SW =</span> <span class="dv">225</span>, <span class="at">WSW =</span> <span class="fl">247.5</span>,</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">W =</span> <span class="dv">270</span>, <span class="at">WNW =</span> <span class="fl">292.5</span>, <span class="at">NW =</span> <span class="dv">315</span>, <span class="at">NNW =</span> <span class="fl">337.5</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>cc22 <span class="sc">|&gt;</span> </span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">dttm =</span> <span class="st">`</span><span class="at">Report Date / Time</span><span class="st">`</span>,</span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">temp =</span> <span class="st">`</span><span class="at">Air Temperature</span><span class="st">`</span>,</span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">hum =</span> <span class="st">`</span><span class="at">Relative Humidity</span><span class="st">`</span>,</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>         <span class="at">ws =</span> <span class="st">`</span><span class="at">Wind Speed</span><span class="st">`</span>,                                                     </span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>         <span class="at">wd =</span> <span class="st">`</span><span class="at">Wind Direction</span><span class="st">`</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(dttm, temp, hum, ws, wd) <span class="sc">|&gt;</span> </span>
+<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">day_name =</span> <span class="fu">wday</span>(dttm, <span class="at">label=</span><span class="cn">TRUE</span>),</span>
+<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">dt_date =</span> <span class="fu">as_date</span>(dttm),</span>
+<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">week_group =</span> <span class="fu">case_when</span>(day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Mon"</span>, <span class="st">"Fri"</span>) <span class="sc">~</span> <span class="st">"Other Weekdays"</span>,</span>
+<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Tue"</span>, <span class="st">"Wed"</span>, <span class="st">"Thu"</span>) <span class="sc">~</span> <span class="st">"Core Weekdays"</span>,</span>
+<span id="cb20-23"><a href="#cb20-23" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Sat"</span>, <span class="st">"Sun"</span>) <span class="sc">~</span> <span class="st">"Weekends"</span>)</span>
+<span id="cb20-24"><a href="#cb20-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb20-25"><a href="#cb20-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_date, week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb20-26"><a href="#cb20-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ws =</span> <span class="fu">mean</span>(ws, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-27"><a href="#cb20-27" aria-hidden="true" tabindex="-1"></a>            <span class="at">wd  =</span> <span class="fu">mean</span>(wd, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-28"><a href="#cb20-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">hum =</span> <span class="fu">mean</span>(hum, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-29"><a href="#cb20-29" aria-hidden="true" tabindex="-1"></a>            <span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span> </span>
+<span id="cb20-30"><a href="#cb20-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="ot">-&gt;</span> weather_by_week</span>
+<span id="cb20-31"><a href="#cb20-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-32"><a href="#cb20-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-33"><a href="#cb20-33" aria-hidden="true" tabindex="-1"></a>cc23 <span class="sc">|&gt;</span> </span>
+<span id="cb20-34"><a href="#cb20-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">dttm =</span> <span class="st">`</span><span class="at">Report Date / Time</span><span class="st">`</span>,</span>
+<span id="cb20-35"><a href="#cb20-35" aria-hidden="true" tabindex="-1"></a>         <span class="at">temp =</span> <span class="st">`</span><span class="at">Air Temperature</span><span class="st">`</span>,</span>
+<span id="cb20-36"><a href="#cb20-36" aria-hidden="true" tabindex="-1"></a>         <span class="at">hum =</span> <span class="st">`</span><span class="at">Relative Humidity</span><span class="st">`</span>,</span>
+<span id="cb20-37"><a href="#cb20-37" aria-hidden="true" tabindex="-1"></a>         <span class="at">ws =</span> <span class="st">`</span><span class="at">Wind Speed</span><span class="st">`</span>,                                                     </span>
+<span id="cb20-38"><a href="#cb20-38" aria-hidden="true" tabindex="-1"></a>         <span class="at">wd =</span> <span class="st">`</span><span class="at">Wind Direction</span><span class="st">`</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb20-39"><a href="#cb20-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(dttm, temp, hum, ws, wd) <span class="sc">|&gt;</span> </span>
+<span id="cb20-40"><a href="#cb20-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">day_name =</span> <span class="fu">wday</span>(dttm, <span class="at">label=</span><span class="cn">TRUE</span>),</span>
+<span id="cb20-41"><a href="#cb20-41" aria-hidden="true" tabindex="-1"></a>         <span class="at">dt_date =</span> <span class="fu">as_date</span>(dttm),</span>
+<span id="cb20-42"><a href="#cb20-42" aria-hidden="true" tabindex="-1"></a>         <span class="at">week_group =</span> <span class="fu">case_when</span>(day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Mon"</span>, <span class="st">"Fri"</span>) <span class="sc">~</span> <span class="st">"Other Weekdays"</span>,</span>
+<span id="cb20-43"><a href="#cb20-43" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Tue"</span>, <span class="st">"Wed"</span>, <span class="st">"Thu"</span>) <span class="sc">~</span> <span class="st">"Core Weekdays"</span>,</span>
+<span id="cb20-44"><a href="#cb20-44" aria-hidden="true" tabindex="-1"></a>                                day_name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Sat"</span>, <span class="st">"Sun"</span>) <span class="sc">~</span> <span class="st">"Weekends"</span>)</span>
+<span id="cb20-45"><a href="#cb20-45" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb20-46"><a href="#cb20-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_date, week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb20-47"><a href="#cb20-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">ws =</span> <span class="fu">mean</span>(ws, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-48"><a href="#cb20-48" aria-hidden="true" tabindex="-1"></a>            <span class="at">wd  =</span> <span class="fu">mean</span>(wd, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-49"><a href="#cb20-49" aria-hidden="true" tabindex="-1"></a>            <span class="at">hum =</span> <span class="fu">mean</span>(hum, <span class="at">na.rm =</span> T),</span>
+<span id="cb20-50"><a href="#cb20-50" aria-hidden="true" tabindex="-1"></a>            <span class="at">temp =</span> <span class="fu">mean</span>(temp, <span class="at">na.rm =</span> T)) <span class="sc">|&gt;</span> </span>
+<span id="cb20-51"><a href="#cb20-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="ot">-&gt;</span> weather_by_week23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="normalising-no2" class="level2">
@@ -418,14 +347,14 @@ dttm  (1): Report Date / Time
 <p>For more information, please refer to <a href="https://www.researchgate.net/publication/262766424_Technical_note_Averaging_wind_speeds_and_directions">this link</a>.</p>
 <p>For the normalising process, we used the <code>gam()</code> function and smoothed windspeed(ws), easterly &amp; southerly wind directtions, temperature, and relative humidity.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>no2_22 <span class="sc">|&gt;</span> </span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GHSR"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_22 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GG2001_S"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>))  <span class="ot">-&gt;</span> df_highst_22</span>
-<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>df_highst_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>no2_22 <span class="sc">|&gt;</span> </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GHSR"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_22 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GG2001_S"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>))  <span class="ot">-&gt;</span> df_highst_22</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>df_highst_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 13
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -443,8 +372,8 @@ dttm  (1): Report Date / Time
 # ℹ 51 more rows
 # ℹ 4 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>gam_highst_22 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_highst_22)</span>
-<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_highst_22)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>gam_highst_22 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_highst_22)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_highst_22)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -473,9 +402,9 @@ Rank: 45/46
 R-sq.(adj) =  0.738   Deviance explained = 79.7%
 GCV = 15.536  Scale est. = 11.878    n = 61</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df_highst_22<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_highst_22)</span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>df_highst_22<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_highst_22<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_highst_22<span class="sc">$</span>no2_daily) </span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>df_highst_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>df_highst_22<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_highst_22)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>df_highst_22<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_highst_22<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_highst_22<span class="sc">$</span>no2_daily) </span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>df_highst_22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 15
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -494,15 +423,15 @@ GCV = 15.536  Scale est. = 11.878    n = 61</code></pre>
 # ℹ 6 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;,
 #   residuals &lt;dbl&gt;, no2_normalised &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># High St 2023</span></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>no2_23 <span class="sc">|&gt;</span> </span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GHSR"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_23 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GG2001_S"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week23, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_highst_23</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>df_highst_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># High St 2023</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>no2_23 <span class="sc">|&gt;</span> </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GHSR"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_23 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GG2001_S"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week23, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_highst_23</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>df_highst_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 13
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -520,8 +449,8 @@ GCV = 15.536  Scale est. = 11.878    n = 61</code></pre>
 # ℹ 51 more rows
 # ℹ 4 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>gam_highst_23 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_highst_23)</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_highst_23)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>gam_highst_23 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_highst_23)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_highst_23)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -549,9 +478,9 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.647   Deviance explained = 70.7%
 GCV = 14.212  Scale est. = 11.591    n = 61</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>df_highst_23<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_highst_23)</span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>df_highst_23<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_highst_23<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_highst_23<span class="sc">$</span>no2_daily) </span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>df_highst_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>df_highst_23<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_highst_23)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>df_highst_23<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_highst_23<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_highst_23<span class="sc">$</span>no2_daily) </span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>df_highst_23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 15
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -570,16 +499,16 @@ GCV = 14.212  Scale est. = 11.591    n = 61</code></pre>
 # ℹ 6 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;,
 #   residuals &lt;dbl&gt;, no2_normalised &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(df_highst_22, df_highst_23) <span class="ot">-&gt;</span> highst</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(df_highst_22, df_highst_23) <span class="ot">-&gt;</span> highst</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Here is the plot for High Street.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> dt_date, <span class="at">y =</span> no2_normalised)) <span class="sc">+</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>dt_year, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normalized NO2 Concentration"</span>,</span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">""</span>,</span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Normalised NO2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> dt_date, <span class="at">y =</span> no2_normalised)) <span class="sc">+</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>dt_year, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normalized NO2 Concentration"</span>,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">""</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Normalised NO2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -593,14 +522,14 @@ GCV = 14.212  Scale est. = 11.591    n = 61</code></pre>
 <h3 class="anchored" data-anchor-id="hope-street">Hope Street</h3>
 <p>Same work applies for Hope Street too.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>no2_22 <span class="sc">|&gt;</span> </span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GLA4"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_22 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GA2401_D"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_hopest22</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>df_hopest22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>no2_22 <span class="sc">|&gt;</span> </span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GLA4"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_22 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GA2401_D"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_hopest22</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>df_hopest22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 13
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -618,8 +547,8 @@ GCV = 14.212  Scale est. = 11.591    n = 61</code></pre>
 # ℹ 51 more rows
 # ℹ 4 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>gam_hopest_22 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_hopest22)</span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_hopest_22)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>gam_hopest_22 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_hopest22)</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_hopest_22)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -647,9 +576,9 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.859   Deviance explained = 88.4%
 GCV = 25.765  Scale est. = 20.835    n = 61</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>df_hopest22<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_hopest_22)</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>df_hopest22<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_hopest22<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_hopest22<span class="sc">$</span>no2_daily) </span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>df_hopest22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>df_hopest22<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_hopest_22)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>df_hopest22<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_hopest22<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_hopest22<span class="sc">$</span>no2_daily) </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>df_hopest22</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 15
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -668,14 +597,14 @@ GCV = 25.765  Scale est. = 20.835    n = 61</code></pre>
 # ℹ 6 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;,
 #   residuals &lt;dbl&gt;, no2_normalised &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>no2_23 <span class="sc">|&gt;</span> </span>
-<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GLA4"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_23 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GA2401_D"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>,<span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week23, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
-<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
-<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_hopest23</span>
-<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>df_hopest23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>no2_23 <span class="sc">|&gt;</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(code <span class="sc">==</span> <span class="st">"GLA4"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(traffic_23 <span class="sc">|&gt;</span> <span class="fu">filter</span>(siteId <span class="sc">==</span> <span class="st">"GA2401_D"</span>), <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"dt_year"</span>,<span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">full_join</span>(weather_by_week23, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"dt_date"</span>, <span class="st">"week_group"</span>)) <span class="sc">|&gt;</span> </span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">u_wind =</span> ws <span class="sc">*</span> <span class="fu">sin</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>),</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">v_wind =</span> ws <span class="sc">*</span> <span class="fu">cos</span>(wd <span class="sc">*</span> pi <span class="sc">/</span> <span class="dv">180</span>)) <span class="ot">-&gt;</span> df_hopest23</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>df_hopest23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 13
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -693,8 +622,8 @@ GCV = 25.765  Scale est. = 20.835    n = 61</code></pre>
 # ℹ 51 more rows
 # ℹ 4 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>gam_hopest_23 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_hopest23)</span>
-<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_hopest_23)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>gam_hopest_23 <span class="ot">&lt;-</span> <span class="fu">gam</span>(no2_daily <span class="sc">~</span> <span class="fu">s</span>(ws) <span class="sc">+</span> <span class="fu">s</span>(u_wind) <span class="sc">+</span> <span class="fu">s</span>(v_wind) <span class="sc">+</span> <span class="fu">s</span>(temp) <span class="sc">+</span> <span class="fu">s</span>(hum), <span class="at">data =</span> df_hopest23)</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam_hopest_23)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
 Family: gaussian 
@@ -722,9 +651,9 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 R-sq.(adj) =  0.861   Deviance explained = 89.1%
 GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>df_hopest23<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_hopest_23)</span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>df_hopest23<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_hopest23<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_hopest23<span class="sc">$</span>no2_daily) </span>
-<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>df_hopest23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>df_hopest23<span class="sc">$</span>residuals <span class="ot">&lt;-</span> <span class="fu">residuals</span>(gam_hopest_23)</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>df_hopest23<span class="sc">$</span>no2_normalised <span class="ot">&lt;-</span> df_hopest23<span class="sc">$</span>residuals <span class="sc">+</span> <span class="fu">mean</span>(df_hopest23<span class="sc">$</span>no2_daily) </span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>df_hopest23</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 61 × 15
    code  dt_date    week_group   no2_daily dt_year siteId total_flow    ws    wd
@@ -743,16 +672,16 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 # ℹ 6 more variables: hum &lt;dbl&gt;, temp &lt;dbl&gt;, u_wind &lt;dbl&gt;, v_wind &lt;dbl&gt;,
 #   residuals &lt;dbl&gt;, no2_normalised &lt;dbl&gt;</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(df_hopest22, df_hopest23) <span class="ot">-&gt;</span> hopest</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(df_hopest22, df_hopest23) <span class="ot">-&gt;</span> hopest</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Here is a plot.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb57"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> dt_date, <span class="at">y =</span> no2_normalised)) <span class="sc">+</span></span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>dt_year, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normalised NO2 Concentration"</span>,</span>
-<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">""</span>,</span>
-<span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> dt_date, <span class="at">y =</span> no2_normalised)) <span class="sc">+</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>dt_year, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Normalised NO2 Concentration"</span>,</span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">""</span>,</span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -770,9 +699,9 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 <p>Okay now, is it now time to move on to the stats test? No! We have one more step to go 😅</p>
 <p>Since this study compares 2022 to 2023 by week day categories, we need to makes sure that the numbers of days are equivalent between the two groups.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>highst <span class="sc">|&gt;</span> </span>
-<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_year, week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>highst <span class="sc">|&gt;</span> </span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_year, week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'dt_year'. You can override using the
 `.groups` argument.</code></pre>
@@ -792,9 +721,9 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 <p>In High Street, we see that the core weekdays are equal, but the other weekdays and weekends have a difference.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>hopest <span class="sc">|&gt;</span> </span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_year, week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>hopest <span class="sc">|&gt;</span> </span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(dt_year, week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'dt_year'. You can override using the
 `.groups` argument.</code></pre>
@@ -814,25 +743,25 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 <p>Sam job is done for Hope Street.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set seed for reproducibility (optional)</span></span>
-<span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb64-3"><a href="#cb64-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-4"><a href="#cb64-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022</span></span>
-<span id="cb64-5"><a href="#cb64-5" aria-hidden="true" tabindex="-1"></a>highst1 <span class="ot">&lt;-</span> highst <span class="sc">%&gt;%</span></span>
-<span id="cb64-6"><a href="#cb64-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Other Weekdays"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2022</span>), <span class="dv">1</span>)))</span>
-<span id="cb64-7"><a href="#cb64-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-8"><a href="#cb64-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Weekends" where "dt_year" == 2023</span></span>
-<span id="cb64-9"><a href="#cb64-9" aria-hidden="true" tabindex="-1"></a>highst2 <span class="ot">&lt;-</span> highst1 <span class="sc">%&gt;%</span></span>
-<span id="cb64-10"><a href="#cb64-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Weekends"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2023</span>), <span class="dv">1</span>)))</span>
-<span id="cb64-11"><a href="#cb64-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb64-12"><a href="#cb64-12" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
-<span id="cb64-13"><a href="#cb64-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group, dt_year) <span class="sc">|&gt;</span> </span>
-<span id="cb64-14"><a href="#cb64-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">traffic =</span> <span class="fu">mean</span>(total_flow),</span>
-<span id="cb64-15"><a href="#cb64-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_sd =</span> <span class="fu">sd</span>(total_flow),</span>
-<span id="cb64-16"><a href="#cb64-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_med =</span> <span class="fu">median</span>(total_flow),</span>
-<span id="cb64-17"><a href="#cb64-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2 =</span> <span class="fu">mean</span>(no2_normalised),</span>
-<span id="cb64-18"><a href="#cb64-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_sd =</span> <span class="fu">sd</span>(no2_normalised),</span>
-<span id="cb64-19"><a href="#cb64-19" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_med =</span> <span class="fu">median</span>(no2_normalised))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set seed for reproducibility (optional)</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022</span></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>highst1 <span class="ot">&lt;-</span> highst <span class="sc">%&gt;%</span></span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Other Weekdays"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2022</span>), <span class="dv">1</span>)))</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Weekends" where "dt_year" == 2023</span></span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a>highst2 <span class="ot">&lt;-</span> highst1 <span class="sc">%&gt;%</span></span>
+<span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Weekends"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2023</span>), <span class="dv">1</span>)))</span>
+<span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
+<span id="cb55-13"><a href="#cb55-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group, dt_year) <span class="sc">|&gt;</span> </span>
+<span id="cb55-14"><a href="#cb55-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">traffic =</span> <span class="fu">mean</span>(total_flow),</span>
+<span id="cb55-15"><a href="#cb55-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_sd =</span> <span class="fu">sd</span>(total_flow),</span>
+<span id="cb55-16"><a href="#cb55-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_med =</span> <span class="fu">median</span>(total_flow),</span>
+<span id="cb55-17"><a href="#cb55-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2 =</span> <span class="fu">mean</span>(no2_normalised),</span>
+<span id="cb55-18"><a href="#cb55-18" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_sd =</span> <span class="fu">sd</span>(no2_normalised),</span>
+<span id="cb55-19"><a href="#cb55-19" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_med =</span> <span class="fu">median</span>(no2_normalised))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'week_group'. You can override using the
 `.groups` argument.</code></pre>
@@ -851,22 +780,22 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022</span></span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>hopest1 <span class="ot">&lt;-</span> hopest <span class="sc">%&gt;%</span></span>
-<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Other Weekdays"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2022</span>), <span class="dv">1</span>)))</span>
-<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Weekends" where "dt_year" == 2023</span></span>
-<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="ot">&lt;-</span> hopest1 <span class="sc">%&gt;%</span></span>
-<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Weekends"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2023</span>), <span class="dv">1</span>)))</span>
-<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>hopest <span class="sc">|&gt;</span> </span>
-<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group, dt_year) <span class="sc">|&gt;</span> </span>
-<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">traffic =</span> <span class="fu">mean</span>(total_flow),</span>
-<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_sd =</span> <span class="fu">sd</span>(total_flow),</span>
-<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_med =</span> <span class="fu">median</span>(total_flow),</span>
-<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2 =</span> <span class="fu">mean</span>(no2_normalised),</span>
-<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_sd =</span> <span class="fu">sd</span>(no2_normalised),</span>
-<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_med =</span> <span class="fu">median</span>(no2_normalised))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Other Weekdays" where "dt_year" == 2022</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>hopest1 <span class="ot">&lt;-</span> hopest <span class="sc">%&gt;%</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Other Weekdays"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2022</span>), <span class="dv">1</span>)))</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove one randomly selected row from "Weekends" where "dt_year" == 2023</span></span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="ot">&lt;-</span> hopest1 <span class="sc">%&gt;%</span></span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(<span class="fu">row_number</span>() <span class="sc">%in%</span> <span class="fu">sample</span>(<span class="fu">which</span>(week_group <span class="sc">==</span> <span class="st">"Weekends"</span> <span class="sc">&amp;</span> dt_year <span class="sc">==</span> <span class="dv">2023</span>), <span class="dv">1</span>)))</span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>hopest <span class="sc">|&gt;</span> </span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group, dt_year) <span class="sc">|&gt;</span> </span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">traffic =</span> <span class="fu">mean</span>(total_flow),</span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_sd =</span> <span class="fu">sd</span>(total_flow),</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">traffic_med =</span> <span class="fu">median</span>(total_flow),</span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2 =</span> <span class="fu">mean</span>(no2_normalised),</span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_sd =</span> <span class="fu">sd</span>(no2_normalised),</span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">no2_med =</span> <span class="fu">median</span>(no2_normalised))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>`summarise()` has grouped output by 'week_group'. You can override using the
 `.groups` argument.</code></pre>
@@ -890,10 +819,10 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 <p>Okay, now we are ready to run the Wilcox Signed Rank Test. Note this is a “paired” test, thus the observations before and after have to match perfectly.</p>
 <p>First, we run the code for High Street.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
-<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(total_flow <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
-<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(total_flow <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      week_group        .y. group1 group2 n1 n2 statistic         p
 1  Core Weekdays total_flow   2022   2023 27 27       359 0.0000465
@@ -902,23 +831,23 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> total_flow, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
-<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
-<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
-<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Traffic Flow on High Street"</span>,</span>
-<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
-<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
-<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Total Traffic Flow"</span>,</span>
-<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
-<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
-<span id="cb72-12"><a href="#cb72-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
-<span id="cb72-14"><a href="#cb72-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
-<span id="cb72-15"><a href="#cb72-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
-<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x))  <span class="co"># Replace dots with newlines in x-axis labels</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> total_flow, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Traffic Flow on High Street"</span>,</span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Total Traffic Flow"</span>,</span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
+<span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
+<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
+<span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
+<span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x))  <span class="co"># Replace dots with newlines in x-axis labels</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -926,14 +855,14 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("traffic_flow_highst.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("traffic_flow_highst.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We do the same job for Hope Street.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="sc">|&gt;</span> </span>
-<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(total_flow <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
-<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="sc">|&gt;</span> </span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(total_flow <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      week_group        .y. group1 group2 n1 n2 statistic     p
 1  Core Weekdays total_flow   2022   2023 27 27       136 0.211
@@ -942,23 +871,23 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> total_flow, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
-<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
-<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
-<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Traffic Flow on Hope Street"</span>,</span>
-<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
-<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
-<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Total Traffic Flow"</span>,</span>
-<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
-<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
-<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
-<span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
-<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
-<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x))  <span class="co"># Replace dots with newlines in x-axis labels</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb67"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> total_flow, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Traffic Flow on Hope Street"</span>,</span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
+<span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Total Traffic Flow"</span>,</span>
+<span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x))  <span class="co"># Replace dots with newlines in x-axis labels</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -972,10 +901,10 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 <h3 class="anchored" data-anchor-id="no2">NO<sub>2</sub></h3>
 <p>High Street</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb77"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb77-1"><a href="#cb77-1" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
-<span id="cb77-2"><a href="#cb77-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb77-3"><a href="#cb77-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(no2_normalised <span class="sc">~</span> dt_year, <span class="at">paired =</span> T) <span class="sc">|&gt;</span> </span>
-<span id="cb77-4"><a href="#cb77-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>highst2 <span class="sc">|&gt;</span> </span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb68-3"><a href="#cb68-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(no2_normalised <span class="sc">~</span> dt_year, <span class="at">paired =</span> T) <span class="sc">|&gt;</span> </span>
+<span id="cb68-4"><a href="#cb68-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      week_group            .y. group1 group2 n1 n2 statistic           p
 1  Core Weekdays no2_normalised   2022   2023 27 27       373 0.000000149
@@ -984,25 +913,25 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb79"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb79-1"><a href="#cb79-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NO2 Normalized Comparison</span></span>
-<span id="cb79-2"><a href="#cb79-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> no2_normalised, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
-<span id="cb79-3"><a href="#cb79-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
-<span id="cb79-4"><a href="#cb79-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>,<span class="dv">30</span>) <span class="sc">+</span></span>
-<span id="cb79-5"><a href="#cb79-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
-<span id="cb79-6"><a href="#cb79-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb79-7"><a href="#cb79-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normalized NO2 Levels on High Street"</span>,</span>
-<span id="cb79-8"><a href="#cb79-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
-<span id="cb79-9"><a href="#cb79-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
-<span id="cb79-10"><a href="#cb79-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>),</span>
-<span id="cb79-11"><a href="#cb79-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
-<span id="cb79-12"><a href="#cb79-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb79-13"><a href="#cb79-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
-<span id="cb79-14"><a href="#cb79-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb79-15"><a href="#cb79-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
-<span id="cb79-16"><a href="#cb79-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
-<span id="cb79-17"><a href="#cb79-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
-<span id="cb79-18"><a href="#cb79-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb79-19"><a href="#cb79-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="co"># NO2 Normalized Comparison</span></span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(highst, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> no2_normalised, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="dv">0</span>,<span class="dv">30</span>) <span class="sc">+</span></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normalized NO2 Levels on High Street"</span>,</span>
+<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
+<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
+<span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>),</span>
+<span id="cb70-11"><a href="#cb70-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
+<span id="cb70-12"><a href="#cb70-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
+<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb70-15"><a href="#cb70-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
+<span id="cb70-16"><a href="#cb70-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
+<span id="cb70-17"><a href="#cb70-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
+<span id="cb70-18"><a href="#cb70-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb70-19"><a href="#cb70-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1010,14 +939,14 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("normalized_no2_highst.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("normalized_no2_highst.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Hope Street</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb81"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="sc">|&gt;</span> </span>
-<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
-<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(no2_normalised <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
-<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>hopest2 <span class="sc">|&gt;</span> </span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week_group) <span class="sc">|&gt;</span> </span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">wilcox_test</span>(no2_normalised <span class="sc">~</span> dt_year, <span class="at">paired =</span> T)<span class="sc">|&gt;</span> </span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      week_group            .y. group1 group2 n1 n2 statistic        p
 1  Core Weekdays no2_normalised   2022   2023 27 27       338 0.000125
@@ -1026,23 +955,23 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> no2_normalised, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
-<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
-<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
-<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normalized NO2 Levels on Hope Street"</span>,</span>
-<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
-<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
-<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>),</span>
-<span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
-<span id="cb83-10"><a href="#cb83-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb83-11"><a href="#cb83-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
-<span id="cb83-12"><a href="#cb83-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb83-13"><a href="#cb83-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
-<span id="cb83-14"><a href="#cb83-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
-<span id="cb83-15"><a href="#cb83-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
-<span id="cb83-16"><a href="#cb83-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb83-17"><a href="#cb83-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(hopest, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">interaction</span>(dt_year, week_group), <span class="at">y =</span> no2_normalised, <span class="at">fill =</span> dt_year)) <span class="sc">+</span></span>
+<span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.shape =</span> <span class="cn">NA</span>) <span class="sc">+</span>  <span class="co"># Remove outlier points</span></span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span>mean, <span class="at">geom=</span><span class="st">"point"</span>, <span class="at">shape=</span><span class="dv">18</span>, <span class="at">size=</span><span class="dv">3</span>, <span class="at">color=</span><span class="st">"black"</span>, <span class="at">fill=</span><span class="st">"black"</span>) <span class="sc">+</span>  <span class="co"># Add mean points</span></span>
+<span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb74-5"><a href="#cb74-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Normalized NO2 Levels on Hope Street"</span>,</span>
+<span id="cb74-6"><a href="#cb74-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Comparison between Aug-Sep 2022/2023"</span>,</span>
+<span id="cb74-7"><a href="#cb74-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year and Week Group"</span>,</span>
+<span id="cb74-8"><a href="#cb74-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"NO"</span>[<span class="dv">2</span>] <span class="sc">*</span> <span class="st">" (Normalized)"</span>),</span>
+<span id="cb74-9"><a href="#cb74-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Year"</span></span>
+<span id="cb74-10"><a href="#cb74-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb74-11"><a href="#cb74-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">15</span>) <span class="sc">+</span>  <span class="co"># Use a minimal theme with larger base font size</span></span>
+<span id="cb74-12"><a href="#cb74-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb74-13"><a href="#cb74-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">#plot.title = element_text(hjust = 0.5),  # Center the plot title</span></span>
+<span id="cb74-14"><a href="#cb74-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">30</span>, <span class="at">hjust =</span> <span class="dv">1</span>, <span class="at">vjust =</span> <span class="dv">1</span>),  <span class="co"># Rotate x-axis labels and adjust justification</span></span>
+<span id="cb74-15"><a href="#cb74-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"top"</span>  <span class="co"># Position the legend at the top</span></span>
+<span id="cb74-16"><a href="#cb74-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb74-17"><a href="#cb74-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_discrete</span>(<span class="at">labels =</span> <span class="cf">function</span>(x) <span class="fu">gsub</span>(<span class="st">"</span><span class="sc">\\</span><span class="st">."</span>, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>, x)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -1050,7 +979,7 @@ GCV = 24.088  Scale est. = 18.624    n = 61</code></pre>
 </figure>
 </div>
 </div>
-<div class="sourceCode cell-code" id="cb84"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb84-1"><a href="#cb84-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("normalized_no2_hopest.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ggsave("normalized_no2_hopest.jpg", width = 6.5, height = 5.5)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>

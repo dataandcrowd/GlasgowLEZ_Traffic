@@ -11,7 +11,8 @@ editor_options:
 ---
 
 
-Here is a step-by-step process of our analysis. We ensure that the codes are fully reproducible.
+Here is a step-by-step process of our analysis. We ensure that the codes are fully reproducible. We ran the code on a macOS machine. If you're using a different operating system or have a different language set as your locale, you may encounter some errors.
+
 
 ## Import packages
 For the analysis, we used a few packages `tidyverse` for data cleaning, analysis, and visualisation, `mgcv` for Generalised Additive Models (GAM), and `rstatix` for Wilcox Sign Rank Test. Note `sf`, `mapview`, and `openair` packages were used to import dataset and explore the preprocessed dataset, so we left them.
@@ -37,7 +38,7 @@ To access the original traffic dataset please visit the `Raw Data/Raw data SCOOT
 
 For more information about traffic, please refer to the UBDC webpage https://www.ubdc.ac.uk/news/new-high-resolution-traffic-flow-dataset-available-from-ubdc.
 
-```{r}
+```{r message=F}
 traffic_raw <- read_csv("traffic.csv")
 
 traffic_raw |> 
@@ -61,7 +62,7 @@ For NO~2~, we used the `openair` R package and downloaded Glasgow's High Street 
 
 Given the dataset, we filtered the data to align with the traffic data, and converted the years to factors which is a plot-friendly format in R. 
 
-```{r}
+```{r message=F}
 no2 <- read_csv("no2.csv")
 
 no2 |> 
@@ -88,7 +89,7 @@ Another step is that we are going to group the days of the week as Core weekdays
 
 
 
-```{r}
+```{r message=F}
 cc22_aug <- read_csv("clincarthill_22_aug.csv")
 cc22_sep <- read_csv("clincarthill_22_sep.csv")
 cc23_aug <- read_csv("clincarthill_23_aug.csv")
