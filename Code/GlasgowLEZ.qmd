@@ -362,6 +362,7 @@ ggplot(highst, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
     subtitle = "Comparison between Aug-Sep 2022/2023",
     x = "Year and Week Group",
     y = "Total Traffic Flow",
+    caption = "Line = Median, Dot = Mean",
     fill = "Year"
   ) +
   theme_minimal(base_size = 15) +  # Use a minimal theme with larger base font size
@@ -394,6 +395,7 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
     subtitle = "Comparison between Aug-Sep 2022/2023",
     x = "Year and Week Group",
     y = "Total Traffic Flow",
+    caption = "Line = Median, Dot = Mean",
     fill = "Year"
   ) +
   theme_minimal(base_size = 15) +  # Use a minimal theme with larger base font size
@@ -403,6 +405,8 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = total_flow, fill = 
     legend.position = "top"  # Position the legend at the top
   ) +
   scale_x_discrete(labels = function(x) gsub("\\.", "\n", x))  # Replace dots with newlines in x-axis labels
+
+#ggsave("traffic_flow_hopest.jpg", width = 6.5, height = 5.5)
 
 ```
 
@@ -430,6 +434,7 @@ ggplot(highst, aes(x = interaction(dt_year, week_group), y = no2_normalised, fil
     subtitle = "Comparison between Aug-Sep 2022/2023",
     x = "Year and Week Group",
     y = expression("NO"[2] * " (Normalized)"),
+    caption = "Line = Median, Dot = Mean",
     fill = "Year"
   ) +
   theme_minimal(base_size = 15) +  # Use a minimal theme with larger base font size
@@ -463,6 +468,7 @@ ggplot(hopest, aes(x = interaction(dt_year, week_group), y = no2_normalised, fil
     subtitle = "Comparison between Aug-Sep 2022/2023",
     x = "Year and Week Group",
     y = expression("NO"[2] * " (Normalized)"),
+    caption = "Line = Median, Dot = Mean",
     fill = "Year"
   ) +
   theme_minimal(base_size = 15) +  # Use a minimal theme with larger base font size
